@@ -1,6 +1,7 @@
 // Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
 
 #include "MyProject2.h"
+#include "AllmightyMaster.h"
 #include "MyProject2Ball.h"
 
 AMyProject2Ball::AMyProject2Ball()
@@ -56,11 +57,13 @@ AMyProject2Ball::AMyProject2Ball()
 	MaxBallAngularVelocity = 10.f;
 	CameraRotationSensitivity = 10.f;
 	bCanJump = true; // Start being able to jump
-
+	bIsOnSwitch = false; //Start while not being in some switch
 }
 
 void AMyProject2Ball::BeginPlay() 
 {
+	AAllmightyMaster::AddBall(this);
+
 	SetArrowRotation();
 
 	TriggerComponent->SetRelativeScale3D(FVector{ FTriggerSphereSize, FTriggerSphereSize, FTriggerSphereSize });
@@ -84,24 +87,24 @@ void AMyProject2Ball::SetupPlayerInputComponent(class UInputComponent* InputComp
 
 void AMyProject2Ball::OnSphereOverlap(UPrimitiveComponent * OverlappedComp, AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
 {
-	AMyProject2Ball *OtherBall = dynamic_cast<AMyProject2Ball*>(OtherActor);
-	if (OtherBall != nullptr)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::White, TEXT("OVERLAPPING"));
-		BallInside = OtherBall;
-		//OtherBall->Ball->bRenderCustomDepth = true;
-	}	
+	//AMyProject2Ball *OtherBall = dynamic_cast<AMyProject2Ball*>(OtherActor);
+	//if (OtherBall != nullptr)
+	//{
+	//	GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::White, TEXT("OVERLAPPING"));
+	//	BallInside = OtherBall;
+	//	//OtherBall->Ball->bRenderCustomDepth = true;
+	//}	
 }
 
 void AMyProject2Ball::OnSphereOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	AMyProject2Ball *OtherBall = dynamic_cast<AMyProject2Ball*>(OtherActor);
-	if (OtherBall != nullptr)
-	{
-		//OtherBall->Ball->bRenderCustomDepth = false;
-		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::White, TEXT("ENDING OVERLAP"));
-		BallInside = nullptr;
-	}
+	//AMyProject2Ball *OtherBall = dynamic_cast<AMyProject2Ball*>(OtherActor);
+	//if (OtherBall != nullptr)
+	//{
+	//	//OtherBall->Ball->bRenderCustomDepth = false;
+	//	GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::White, TEXT("ENDING OVERLAP"));
+	//	BallInside = nullptr;
+	//}
 }
 
 void AMyProject2Ball::RotateCamera(float Val)
@@ -126,6 +129,7 @@ void AMyProject2Ball::PitchCamera(float Val)
 
 void AMyProject2Ball::CheckForPossession()
 {
+	AMyProject2Ball* BallInside = AAllmightyMaster::GetNextBall(this);
 	if (BallInside != nullptr)
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Green, TEXT("POSSESSING"));
@@ -137,6 +141,12 @@ void AMyProject2Ball::CheckForPossession()
 		BallInside->Ball->bRenderCustomDepth = true;
 		Ball->bRenderCustomDepth = false;
 		BallInside->GetSpringArm()->SetRelativeRotation(SpringArm->GetComponentRotation());
+
+		if (bIsOnSwitch)
+		{
+			Ball->SetPhysicsLinearVelocity(FVector::ZeroVector);
+			Ball->SetPhysicsAngularVelocity(FVector::ZeroVector);
+		}
 	}
 	else
 	{

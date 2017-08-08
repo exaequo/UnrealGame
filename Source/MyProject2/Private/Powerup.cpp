@@ -2,6 +2,7 @@
 
 #include "MyProject2.h"
 #include "MyProject2Ball.h"
+#include "AllmightyMaster.h"
 #include "Public/Powerup.h"
 
 
@@ -30,6 +31,8 @@ void APowerup::OnPowerupOverlap(UPrimitiveComponent * OverlappedComp, AActor * O
 
 	if (Shape != nullptr && Ball != nullptr)
 	{
+		AAllmightyMaster::PowerupCollected(this);
+		//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::White, TEXT("ShouldCollect"));
 		Destroy();
 	}
 }
@@ -39,6 +42,7 @@ void APowerup::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	AAllmightyMaster::AddPowerup(this);
 }
 
 // Called every frame

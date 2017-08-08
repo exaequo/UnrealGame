@@ -49,15 +49,21 @@ public:
 	UPROPERTY(EditAnywhere, Category = Camera)
 	float CameraRotationSensitivity;
 
+
+	bool bIsOnSwitch;
+
 	/** Indicates whether we can currently jump, use to prevent double jumping */
 	bool bCanJump;
 
 protected:
-	UPROPERTY(VisibleAnywhere)
-		AMyProject2Ball* BallInside;
+	//UPROPERTY(VisibleAnywhere)
+	//	AMyProject2Ball* BallInside;
 
 	UPROPERTY(EditAnywhere)
 		float FTriggerSphereSize;
+
+	
+	
 
 	void BeginPlay() override;
 

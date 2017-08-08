@@ -27,6 +27,7 @@ ASwitchButton::ASwitchButton()
 	
 	bTurnedOn = false;
 	PrimaryActorTick.bCanEverTick = true;
+	bReverseSwitch = false;
 
 }
 
@@ -41,7 +42,13 @@ void ASwitchButton::BeginPlay()
 
 void ASwitchButton::ManageDoor(bool TurnOn)
 {
+	if (bReverseSwitch)
+	{
+		TurnOn = !TurnOn;
+	}
+
 	bTurnedOn = TurnOn;
+	
 
 	Door->SetVisibility(!TurnOn);
 	
@@ -64,6 +71,8 @@ void ASwitchButton::OnSwitchOverlap(UPrimitiveComponent * OverlappedComp, AActor
 	if (Shape != nullptr && Ball != nullptr)
 	{
 		ManageDoor(true);
+
+		Ball->bIsOnSwitch = true;
 	}
 
 }
@@ -77,6 +86,7 @@ void ASwitchButton::OnSwitchOverlapEnd(UPrimitiveComponent * OverlappedComp, AAc
 	if (Shape != nullptr && Ball != nullptr)
 	{
 		ManageDoor(false);
+		Ball->bIsOnSwitch = false;
 	}
 }
 
@@ -87,7 +97,7 @@ void ASwitchButton::Tick( float DeltaTime )
 
 	FColor color{ 255, 0, 0 };
 	
-	if (bTurnedOn)
+	if (bTurnedOn ^ bReverseSwitch)
 	{
 		color = FColor{ 0, 255, 0 };
 	}

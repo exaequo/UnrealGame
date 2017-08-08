@@ -27,6 +27,9 @@ public:
 	UPROPERTY(VisibleAnywhere)
 		bool bTurnedOn;
 
+	/**Defines wheter switch door appear or dissapear during switch activation (if true they will dissapear)*/
+	UPROPERTY(EditAnywhere)
+		bool bReverseSwitch;
 
 
 	UFUNCTION()
