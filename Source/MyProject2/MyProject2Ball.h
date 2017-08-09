@@ -46,6 +46,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = Ball)
 	float MaxBallAngularVelocity;
 
+	UPROPERTY(EditAnywhere, Category = Ball)
+		FVector AdditionalGravity;
+
 	UPROPERTY(EditAnywhere, Category = Camera)
 	float CameraRotationSensitivity;
 
@@ -54,6 +57,9 @@ public:
 
 	/** Indicates whether we can currently jump, use to prevent double jumping */
 	bool bCanJump;
+
+	
+	virtual void Tick(float DeltaSeconds) override;
 
 protected:
 	//UPROPERTY(VisibleAnywhere)
@@ -103,6 +109,7 @@ protected:
 	void CheckMaxSpeed();
 
 	void SetArrowRotation();
+
 	// End of APawn interface
 
 protected:

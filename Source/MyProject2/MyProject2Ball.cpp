@@ -50,6 +50,7 @@ AMyProject2Ball::AMyProject2Ball()
 	TriggerComponent->SetRelativeScale3D(FVector{ FTriggerSphereSize, FTriggerSphereSize, FTriggerSphereSize });
 
 	// Set up forces
+	AdditionalGravity = FVector::ZeroVector;
 	RollTorque = 50000000.0f;
 	JumpImpulse = 350000.0f;
 	InAirForce = 10.f;
@@ -60,8 +61,18 @@ AMyProject2Ball::AMyProject2Ball()
 	bIsOnSwitch = false; //Start while not being in some switch
 }
 
-void AMyProject2Ball::BeginPlay() 
+void AMyProject2Ball::Tick(float DeltaSeconds)
 {
+	Super::Tick(DeltaSeconds);
+
+	Ball->AddForce(AdditionalGravity * DeltaSeconds * Ball->GetMass());
+
+}
+
+void AMyProject2Ball::BeginPlay()
+{
+	Super::BeginPlay();
+
 	AAllmightyMaster::AddBall(this);
 
 	SetArrowRotation();
