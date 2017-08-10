@@ -12,6 +12,9 @@ class AMyProject2Ball : public APawn
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Ball, meta = (AllowPrivateAccess = "true"))
 	class UStaticMeshComponent* Ball;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Ball, meta = (AllowPrivateAccess = "true"))
+	class UStaticMeshComponent* SecondBall;
+
 	/** Spring arm for positioning the camera above the ball */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Ball, meta = (AllowPrivateAccess = "true"))
 	class USpringArmComponent* SpringArm;
@@ -27,6 +30,9 @@ public:
 	AMyProject2Ball();
 
 	/** Vertical impulse to apply when pressing jump */
+	UPROPERTY(EditAnywhere, Category = Ball)
+	USceneComponent* RootComp;
+
 	UPROPERTY(EditAnywhere, Category=Ball)
 	float JumpImpulse;
 
@@ -46,6 +52,11 @@ public:
 	UPROPERTY(EditAnywhere, Category = Ball)
 	float MaxBallAngularVelocity;
 
+	UPROPERTY(EditAnywhere, Category = Rope)
+		float RopeStrength;
+	UPROPERTY(EditAnywhere, Category = Rope)
+		float RopeLength;
+
 	UPROPERTY(EditAnywhere, Category = Ball)
 		FVector AdditionalGravity;
 
@@ -53,11 +64,11 @@ public:
 	float CameraRotationSensitivity;
 
 
+
 	bool bIsOnSwitch;
 
 	/** Indicates whether we can currently jump, use to prevent double jumping */
 	bool bCanJump;
-
 	
 	virtual void Tick(float DeltaSeconds) override;
 
@@ -103,6 +114,15 @@ protected:
 
 	UFUNCTION()
 	void CheckForPossession();
+
+	UFUNCTION()
+	void ChangeBalls();
+
+	UFUNCTION()
+	void CheckForRope();
+
+	void Rope(const FVector& From, const FVector& To, const FVector& Direction, bool LeaveTrace = true);
+
 
 	bool RaycastWallCheck(const FVector& direction) const;
 
