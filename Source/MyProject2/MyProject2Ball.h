@@ -1,6 +1,7 @@
 // Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
 #pragma once
 #include "GameFramework/Pawn.h"
+#include "Public/GrabableObject.h"
 #include "MyProject2Ball.generated.h"
 
 UCLASS(config=Game)
@@ -67,6 +68,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = Camera)
 	float CameraRotationSensitivity;
 
+	UPROPERTY(EditAnywhere, Category = Camera)
+		float CameraRaycastUpModifier;
+
 	FTimerHandle RopeTimer;
 
 	bool bCanRope;
@@ -75,16 +79,23 @@ public:
 	/** Indicates whether we can currently jump, use to prevent double jumping */
 	bool bCanJump;
 	
+	UFUNCTION()
+		void ReloadRope(float OldVelocityLimit = -1.f);
+
+	void ReloadRope(AGrabableObject* Grabable);
+
 	virtual void Tick(float DeltaSeconds) override;
 
 protected:
-	//UPROPERTY(VisibleAnywhere)
-	//	AMyProject2Ball* BallInside;
-
+	
 	UPROPERTY(EditAnywhere)
 		float FTriggerSphereSize;
 
+	UPROPERTY()
+	AGrabableObject* ObjectToGrab;
+
 	float DefaultBallVelocity;	
+	FVector DefaultAdditionalGravity;
 
 	void BeginPlay() override;
 
@@ -127,20 +138,16 @@ protected:
 	UFUNCTION()
 	void CheckForRope();
 
-	void Rope(const FVector& From, const FVector& To, const FVector& Direction, bool LeaveTrace = true, UPrimitiveComponent* AffectedComponent = nullptr);
+	void Rope(const FVector& From, const FVector& To, bool LeaveTrace = true, UPrimitiveComponent* AffectedComponent = nullptr);
 	
-	UFUNCTION()
-	void ReloadRope(float OldVelocityLimit);
-
 	bool RaycastWallCheck(const FVector& direction) const;
 
 	void CheckMaxSpeed();
 
 	void SetArrowRotation();
 
-	// End of APawn interface
+	void CameraPointRaycast();
 
-protected:
 	void DrawPossessionLine(const FVector firstPoint, const FVector secondPoint) const;
 
 	void Move(const FVector direction, const FVector perpendicular, const float Val, const FVector rawDirection, bool withTraversalHelp = false, float ReverseVal = 1.f);

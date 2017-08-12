@@ -76,6 +76,7 @@ void AMyProject2Ball::Tick(float DeltaSeconds)
 
 	Ball->AddForce(AdditionalGravity * DeltaSeconds * Ball->GetMass());
 
+	CameraPointRaycast();
 }
 
 void AMyProject2Ball::BeginPlay()
@@ -90,7 +91,7 @@ void AMyProject2Ball::BeginPlay()
 
 	Ball->SetPhysicsMaxAngularVelocity(MaxBallAngularVelocity);
 	DefaultBallVelocity = MaxBallVelocity;
-
+	DefaultAdditionalGravity = AdditionalGravity;
 	//GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::White, TEXT("AngularVelocityCHANGED"));
 }
 
@@ -217,6 +218,60 @@ void AMyProject2Ball::SetArrowRotation()
 	Arrow->SetRelativeRotation(Rot);
 }
 
+void AMyProject2Ball::CameraPointRaycast()
+{
+	FHitResult* HitResult = new FHitResult();
+
+	FVector Direction = SpringArm->GetForwardVector();
+	Direction += FVector::UpVector * CameraRaycastUpModifier;
+	Direction.Normalize();
+
+	float DistanceFromPlayer = FVector::Dist(Ball->GetComponentLocation(), Camera->GetComponentLocation());
+	FVector Start = Camera->GetComponentLocation() + Direction * DistanceFromPlayer; //this->GetActorLocation();
+	FVector End = Start + RopeLength * Direction;
+
+	FCollisionQueryParams* CQP = new FCollisionQueryParams();
+
+	//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Green, FString::Printf(TEXT("Start: (%f, %f, %f), (%f, %f, %f)"), Start.X, Start.Y, Start.Z, Direction.X, Direction.Y, Direction.Z));
+
+	if (GetWorld()->LineTraceSingleByChannel(*HitResult, Start, End, ECC_Camera, *CQP))
+	{
+		AGrabableObject* Grabable = dynamic_cast<AGrabableObject*>(HitResult->GetActor());
+
+		if (Grabable != nullptr)
+		{
+			if (ObjectToGrab != nullptr)
+			{
+				ObjectToGrab->ShowGrabable(false);
+				ObjectToGrab = Grabable;
+				ObjectToGrab->ShowGrabable(true);
+			}
+			else
+			{
+				ObjectToGrab = Grabable;
+				ObjectToGrab->ShowGrabable(true);
+			}
+		}
+		else
+		{
+			if (ObjectToGrab != nullptr)
+			{
+				ObjectToGrab->ShowGrabable(false);
+				ObjectToGrab = nullptr;
+			}
+		}
+	}
+	else
+	{
+		if (ObjectToGrab != nullptr)
+		{
+			ObjectToGrab->ShowGrabable(false);
+			ObjectToGrab = nullptr;
+		}
+	}
+}
+
+
 void AMyProject2Ball::DrawPossessionLine(const FVector firstPoint, const FVector secondPoint) const
 {
 	DrawDebugLine(GetWorld(), firstPoint, secondPoint, FColor{ 255, 255 ,255 }, false, 1.0f, (uint8)'\000', 5.f);
@@ -307,35 +362,51 @@ void AMyProject2Ball::CheckForRope()
 {
 	if (bCanRope)
 	{
-		FHitResult* HitResult = new FHitResult();
-
-
 		FVector Direction = SpringArm->GetForwardVector();
-
 		FVector Start = Ball->GetComponentLocation(); //this->GetActorLocation();
 		FVector End = Start + RopeLength * Direction;
 
-		FCollisionQueryParams* CQP = new FCollisionQueryParams();
-
-		//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Green, FString::Printf(TEXT("Start: (%f, %f, %f), (%f, %f, %f)"), Start.X, Start.Y, Start.Z, Direction.X, Direction.Y, Direction.Z));
-
-		if (GetWorld()->LineTraceSingleByChannel(*HitResult, Start, End, ECC_Visibility, *CQP))
+		if (ObjectToGrab == nullptr)
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Green, TEXT("ROPE HIT"));
+			FHitResult* HitResult = new FHitResult();
 
-			Rope(Start, HitResult->ImpactPoint, Direction, true, HitResult->GetComponent());
+			FCollisionQueryParams* CQP = new FCollisionQueryParams();
 
+			//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Green, FString::Printf(TEXT("Start: (%f, %f, %f), (%f, %f, %f)"), Start.X, Start.Y, Start.Z, Direction.X, Direction.Y, Direction.Z));
+
+			if (GetWorld()->LineTraceSingleByChannel(*HitResult, Start, End, ECC_Visibility, *CQP))
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Green, TEXT("ROPE HIT"));
+
+				AGrabableObject* Gr = dynamic_cast<AGrabableObject*>(HitResult->GetActor());
+				if (Gr == nullptr)
+				{
+					Rope(Start, HitResult->ImpactPoint, true, HitResult->GetComponent());
+				}
+				else
+				{
+					Rope(Start, Gr->GetGrabablePosition());
+				}
+				
+
+			}
+			else
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, TEXT("ROPE DIDNT HIT"));
+			}
 		}
 		else
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, TEXT("ROPE DIDNT HIT"));
-		}
+
+			Rope(Start, ObjectToGrab->GetGrabablePosition());
+		}		
 	}
 }
 
-void AMyProject2Ball::Rope(const FVector & From, const FVector & To, const FVector & Direction, bool LeaveTrace, UPrimitiveComponent* AffectedComponent)
+void AMyProject2Ball::Rope(const FVector & From, const FVector & To, bool LeaveTrace, UPrimitiveComponent* AffectedComponent)
 {
-
+	FVector Direction = To - From;
+	Direction.Normalize();
 	
 	FTimerDelegate TimerDelegate;
 	TimerDelegate.BindUFunction(this, FName("ReloadRope"), DefaultBallVelocity);
@@ -343,9 +414,14 @@ void AMyProject2Ball::Rope(const FVector & From, const FVector & To, const FVect
 	MaxBallVelocity = TNumericLimits<float>::Max();
 	bCanRope = false;
 	bCanJump = false;
+	Ball->SetEnableGravity(false);
+	AdditionalGravity = FVector::ZeroVector;
 
+	GetWorld()->GetTimerManager().ClearTimer(RopeTimer);
 	GetWorld()->GetTimerManager().SetTimer(RopeTimer, TimerDelegate, RopeReloadTime, false);
 
+
+	Ball->SetPhysicsLinearVelocity(FVector::ZeroVector);
 	Ball->AddImpulse(Direction * RopeStrength * Ball->GetMass(), NAME_None, true);
 	
 	//Ball->AddForce(NewDirection * RopeStrength * Ball->GetMass(), NAME_None, false);
@@ -355,7 +431,7 @@ void AMyProject2Ball::Rope(const FVector & From, const FVector & To, const FVect
 		DrawDebugLine(GetWorld(), From, To, FColor{ 255, 255 ,255 }, false, 1.0f, (uint8)'\000', 5.f);
 	}
 
-	if (AffectedComponent != nullptr)
+	if (AffectedComponent != nullptr && AffectedComponent->Mobility == EComponentMobility::Movable && AffectedComponent->IsSimulatingPhysics())
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Yellow, TEXT("COMPO MOVE"));
 		AffectedComponent->AddForce(-Direction * RopeStrength * Ball->GetMass() * RopeFreeObjectMovementMultplier, NAME_None, true);
@@ -366,6 +442,31 @@ void AMyProject2Ball::Rope(const FVector & From, const FVector & To, const FVect
 void AMyProject2Ball::ReloadRope(float OldVelocityLimit)
 {
 	bCanRope = true;
+	AdditionalGravity = DefaultAdditionalGravity;
+	Ball->SetEnableGravity(true);
+	/*FVector Vel = Ball->GetPhysicsLinearVelocity();
+	if (Vel.Z > 0.f) 
+	{
+		Vel.Z = 0.f;
+	}
+	Ball->SetPhysicsLinearVelocity(Vel);*/
+	if (OldVelocityLimit <= 0)
+	{
+		MaxBallVelocity = DefaultBallVelocity;
+	}
+	else 
+	{
+		MaxBallVelocity = OldVelocityLimit;
+	}
+}
 
-	MaxBallVelocity = OldVelocityLimit;
+void AMyProject2Ball::ReloadRope(AGrabableObject * Grabable)
+{
+	
+	if (Grabable == ObjectToGrab)
+	{
+		ReloadRope();
+		ObjectToGrab->ShowGrabable(false);
+		ObjectToGrab = nullptr;
+	}
 }
