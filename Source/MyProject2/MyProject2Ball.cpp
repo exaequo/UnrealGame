@@ -61,8 +61,11 @@ AMyProject2Ball::AMyProject2Ball()
 	MaxBallVelocity = 10.f;
 	RopeStrength = 100.f;
 	RopeLength = 1000.f;
+	RopeReloadTime = 2.f;
+	bCanRope = true;
 	MaxBallAngularVelocity = 10.f;
 	CameraRotationSensitivity = 10.f;
+	RopeFreeObjectMovementMultplier = 1.0f;
 	bCanJump = true; // Start being able to jump
 	bIsOnSwitch = false; //Start while not being in some switch
 }
@@ -86,8 +89,15 @@ void AMyProject2Ball::BeginPlay()
 	TriggerComponent->SetRelativeScale3D(FVector{ FTriggerSphereSize, FTriggerSphereSize, FTriggerSphereSize });
 
 	Ball->SetPhysicsMaxAngularVelocity(MaxBallAngularVelocity);
-	
-	GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::White, TEXT("AngularVelocityCHANGED"));
+	DefaultBallVelocity = MaxBallVelocity;
+
+	//GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::White, TEXT("AngularVelocityCHANGED"));
+}
+
+void AMyProject2Ball::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+	GetWorld()->GetTimerManager().ClearAllTimersForObject(this);
 }
 
 void AMyProject2Ball::SetupPlayerInputComponent(class UInputComponent* InputComponent)
@@ -105,24 +115,12 @@ void AMyProject2Ball::SetupPlayerInputComponent(class UInputComponent* InputComp
 
 void AMyProject2Ball::OnSphereOverlap(UPrimitiveComponent * OverlappedComp, AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
 {
-	//AMyProject2Ball *OtherBall = dynamic_cast<AMyProject2Ball*>(OtherActor);
-	//if (OtherBall != nullptr)
-	//{
-	//	GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::White, TEXT("OVERLAPPING"));
-	//	BallInside = OtherBall;
-	//	//OtherBall->Ball->bRenderCustomDepth = true;
-	//}	
+
 }
 
 void AMyProject2Ball::OnSphereOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	//AMyProject2Ball *OtherBall = dynamic_cast<AMyProject2Ball*>(OtherActor);
-	//if (OtherBall != nullptr)
-	//{
-	//	//OtherBall->Ball->bRenderCustomDepth = false;
-	//	GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::White, TEXT("ENDING OVERLAP"));
-	//	BallInside = nullptr;
-	//}
+
 }
 
 void AMyProject2Ball::RotateCamera(float Val)
@@ -140,7 +138,7 @@ void AMyProject2Ball::PitchCamera(float Val)
 {
 	FRotator rot = SpringArm->GetComponentRotation();
 
-	rot.Pitch =  FMath::Clamp( rot.Pitch + Val * GetWorld()->DeltaTimeSeconds * CameraRotationSensitivity, -80.f, -10.f);
+	rot.Pitch =  FMath::Clamp( rot.Pitch + Val * GetWorld()->DeltaTimeSeconds * CameraRotationSensitivity, -80.f, -5.f);
 
 	SpringArm->SetRelativeRotation(rot);
 }
@@ -247,10 +245,11 @@ void AMyProject2Ball::Move(const FVector direction, const FVector perpendicular,
 	}
 	else
 	{
-		if (RaycastWallCheck(direction * Val))
-		{
+		/*if (RaycastWallCheck(direction * Val))
+		{*/
+			//GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Green, TEXT("Move"));
 			Ball->AddForce(direction * Val * InAirForce * GetWorld()->GetDeltaSeconds(), NAME_None, true);
-		}
+		//}
 	}
 
 	Ball->AddTorque(Torque, NAME_None, true);
@@ -292,6 +291,10 @@ void AMyProject2Ball::NotifyHit(class UPrimitiveComponent* MyComp, class AActor*
 		bCanJump = true;
 	}
 	
+	if (!bCanRope)
+	{
+		ReloadRope(DefaultBallVelocity);
+	}
 }
 
 void AMyProject2Ball::ChangeBalls()
@@ -302,41 +305,67 @@ void AMyProject2Ball::ChangeBalls()
 
 void AMyProject2Ball::CheckForRope()
 {
-
-	FHitResult* HitResult = new FHitResult();
-	
-
-	FVector Direction = SpringArm->GetForwardVector();
-
-	FVector Start = Ball->GetComponentLocation(); //this->GetActorLocation();
-	FVector End = Start + RopeLength * Direction;
-
-	FCollisionQueryParams* CQP = new FCollisionQueryParams();
-
-	GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Green, FString::Printf(TEXT("Start: (%f, %f, %f), (%f, %f, %f)"), Start.X, Start.Y, Start.Z, Direction.X, Direction.Y, Direction.Z));
-
-	if (GetWorld()->LineTraceSingleByChannel(*HitResult, Start, End, ECC_Visibility, *CQP))
+	if (bCanRope)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Green, TEXT("ROPE HIT"));
-		
-		Rope(Start, HitResult->ImpactPoint, Direction, true);
+		FHitResult* HitResult = new FHitResult();
 
-	}
-	else
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, TEXT("ROPE DIDNT HIT"));
+
+		FVector Direction = SpringArm->GetForwardVector();
+
+		FVector Start = Ball->GetComponentLocation(); //this->GetActorLocation();
+		FVector End = Start + RopeLength * Direction;
+
+		FCollisionQueryParams* CQP = new FCollisionQueryParams();
+
+		//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Green, FString::Printf(TEXT("Start: (%f, %f, %f), (%f, %f, %f)"), Start.X, Start.Y, Start.Z, Direction.X, Direction.Y, Direction.Z));
+
+		if (GetWorld()->LineTraceSingleByChannel(*HitResult, Start, End, ECC_Visibility, *CQP))
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Green, TEXT("ROPE HIT"));
+
+			Rope(Start, HitResult->ImpactPoint, Direction, true, HitResult->GetComponent());
+
+		}
+		else
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, TEXT("ROPE DIDNT HIT"));
+		}
 	}
 }
 
-void AMyProject2Ball::Rope(const FVector & From, const FVector & To, const FVector & Direction, bool LeaveTrace)
+void AMyProject2Ball::Rope(const FVector & From, const FVector & To, const FVector & Direction, bool LeaveTrace, UPrimitiveComponent* AffectedComponent)
 {
-	//Ball->AddForce(SpringArm->GetForwardVector() * RopeStrength * Ball->GetMass(), NAME_None, true);
-	Ball->AddImpulse(Direction * RopeStrength * Ball->GetMass(), NAME_None, true);
 
+	
+	FTimerDelegate TimerDelegate;
+	TimerDelegate.BindUFunction(this, FName("ReloadRope"), DefaultBallVelocity);
+	
+	MaxBallVelocity = TNumericLimits<float>::Max();
+	bCanRope = false;
+	bCanJump = false;
+
+	GetWorld()->GetTimerManager().SetTimer(RopeTimer, TimerDelegate, RopeReloadTime, false);
+
+	Ball->AddImpulse(Direction * RopeStrength * Ball->GetMass(), NAME_None, true);
+	
+	//Ball->AddForce(NewDirection * RopeStrength * Ball->GetMass(), NAME_None, false);
 	if (LeaveTrace)
 	{
+		//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Green, FString::Printf(TEXT("Direction: (%f, %f, %f)"), Direction.X, Direction.Y, Direction.Z, NewDirection.X, NewDirection.Y, NewDirection.Z));
 		DrawDebugLine(GetWorld(), From, To, FColor{ 255, 255 ,255 }, false, 1.0f, (uint8)'\000', 5.f);
+	}
+
+	if (AffectedComponent != nullptr)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Yellow, TEXT("COMPO MOVE"));
+		AffectedComponent->AddForce(-Direction * RopeStrength * Ball->GetMass() * RopeFreeObjectMovementMultplier, NAME_None, true);
 	}
 	
 }
 
+void AMyProject2Ball::ReloadRope(float OldVelocityLimit)
+{
+	bCanRope = true;
+
+	MaxBallVelocity = OldVelocityLimit;
+}

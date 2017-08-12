@@ -56,6 +56,10 @@ public:
 		float RopeStrength;
 	UPROPERTY(EditAnywhere, Category = Rope)
 		float RopeLength;
+	UPROPERTY(EditAnywhere, Category = Rope)
+		float RopeReloadTime;
+	UPROPERTY(EditAnywhere, Category = Rope)
+		float RopeFreeObjectMovementMultplier;
 
 	UPROPERTY(EditAnywhere, Category = Ball)
 		FVector AdditionalGravity;
@@ -63,8 +67,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = Camera)
 	float CameraRotationSensitivity;
 
+	FTimerHandle RopeTimer;
 
-
+	bool bCanRope;
 	bool bIsOnSwitch;
 
 	/** Indicates whether we can currently jump, use to prevent double jumping */
@@ -79,10 +84,11 @@ protected:
 	UPROPERTY(EditAnywhere)
 		float FTriggerSphereSize;
 
-	
-	
+	float DefaultBallVelocity;	
 
 	void BeginPlay() override;
+
+	void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	/** Called for side to side input */
 	void MoveRight(float Val);
@@ -121,8 +127,10 @@ protected:
 	UFUNCTION()
 	void CheckForRope();
 
-	void Rope(const FVector& From, const FVector& To, const FVector& Direction, bool LeaveTrace = true);
-
+	void Rope(const FVector& From, const FVector& To, const FVector& Direction, bool LeaveTrace = true, UPrimitiveComponent* AffectedComponent = nullptr);
+	
+	UFUNCTION()
+	void ReloadRope(float OldVelocityLimit);
 
 	bool RaycastWallCheck(const FVector& direction) const;
 
