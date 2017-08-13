@@ -15,33 +15,9 @@ ARotater::ARotater()
 	RotationMesh->SetSimulatePhysics(false);
 	RootComponent = RotationMesh;
 
-	//RotationTrigger = CreateDefaultSubobject<USphereComponent>(TEXT("ROTATION Trigger"));
-	////RotationTrigger->BodyInstance.SetCollisionEnabled(UCollisionProfile::);
-	//RotationTrigger->SetSimulatePhysics(false);
-	////RotationTrigger->OnComponentBeginOverlap.AddUnique(this, &ARotater::OnTriggerOverlapBegin);
-	////RotationTrigger->OnComponentEndOverlap.AddUnique(this, &);
-
-	//RotationTrigger->OnComponentBeginOverlap.AddDynamic(this, &ARotater::OnTriggerOverlapBegin);
-	//RotationTrigger->OnComponentEndOverlap.AddDynamic(this, );
-
-	//TriggerComponent = CreateDefaultSubobject<USphereComponent>(TEXT("TriggerSphere"));
-	//TriggerComponent->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
-	//TriggerComponent->OnComponentBeginOverlap.AddDynamic(this, &ARotater::OnTriggerOverlapBegin);
-	//TriggerComponent->OnComponentEndOverlap.AddDynamic(this, &ARotater::OnTriggerOverlapEnd);
-	
-
 	RotationSpeed = 10.f;
 }
 
-void ARotater::OnTriggerOverlapBegin(AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
-{
-}
-
-void ARotater::OnTriggerOverlapEnd(AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex)
-{
-}
-
-// Called when the game starts or when spawned
 void ARotater::BeginPlay()
 {
 	Super::BeginPlay();

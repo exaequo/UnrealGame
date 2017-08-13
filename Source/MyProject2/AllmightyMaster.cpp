@@ -9,10 +9,8 @@ TArray<APowerup*> AAllmightyMaster::AllPowerups;
 TArray<AMyProject2Ball*> AAllmightyMaster::AllBalls;
 int32 AAllmightyMaster::PowerupCount = 0;
 
-// Sets default values
 AAllmightyMaster::AAllmightyMaster()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
 	
 	AllPowerups.Empty();
@@ -20,23 +18,12 @@ AAllmightyMaster::AAllmightyMaster()
 	PowerupCount = 0;
 }
 
-// Called when the game starts or when spawned
 void AAllmightyMaster::BeginPlay()
 {
-
-	//MasterInstance = this;
 	Super::BeginPlay();
-	if (StartPawn != nullptr)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Green, TEXT("WASNT A NULL"));
-		APlayerController* controller = GetWorld()->GetFirstPlayerController();
-		controller->UnPossess();
-		controller->Possess(StartPawn);
-	}
-	else
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, TEXT("WAS A NULL"));
-	}
+
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::White, TEXT("GAME START"));
+	GEngine->AddOnScreenDebugMessage(-1, 60.f, FColor::Green, TEXT("PRESS 'WSAD' to move, LMB to jump, RMB to rope"));
 }
 
 void AAllmightyMaster::PowerupCollected(APowerup* Collected)
@@ -46,6 +33,12 @@ void AAllmightyMaster::PowerupCollected(APowerup* Collected)
 		AllPowerups.Remove(Collected);
 	}
 	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, FString::Printf(TEXT("Collected %i/%i"), PowerupCount - AllPowerups.Num(), PowerupCount));
+
+	if (AllPowerups.Num() == 0)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, FString::Printf(TEXT("WON \nTime spent %f"), Collected->GetWorld()->GetTimeSeconds()));
+		RestartLevel(Collected->GetWorld()->GetFirstPlayerController());
+	}
 }
 
 void AAllmightyMaster::AddPowerup(APowerup* Powerup)
@@ -69,6 +62,11 @@ AMyProject2Ball* AAllmightyMaster::GetNextBall(AMyProject2Ball* Ball)
 	}
 
 	return nullptr;
+}
+
+void AAllmightyMaster::RestartLevel(APlayerController* Controller)
+{
+	Controller->ConsoleCommand(TEXT("RestartLevel"));
 }
 
 

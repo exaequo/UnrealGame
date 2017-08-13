@@ -46,14 +46,9 @@ AMyProject2Ball::AMyProject2Ball()
 	Camera->SetupAttachment(SpringArm, USpringArmComponent::SocketName);
 	Camera->bUsePawnControlRotation = false; 
 
-	FTriggerSphereSize = 10.f;
 	TriggerComponent = CreateDefaultSubobject<USphereComponent>(TEXT("TriggerSphere"));
 	TriggerComponent->AttachToComponent(Ball, FAttachmentTransformRules::KeepRelativeTransform);
-	TriggerComponent->OnComponentBeginOverlap.AddDynamic(this, &AMyProject2Ball::OnSphereOverlap);
-	TriggerComponent->OnComponentEndOverlap.AddDynamic(this, &AMyProject2Ball::OnSphereOverlapEnd);
-	TriggerComponent->SetRelativeScale3D(FVector{ FTriggerSphereSize, FTriggerSphereSize, FTriggerSphereSize });
 
-	// Set up forces
 	AdditionalGravity = FVector::ZeroVector;
 	RollTorque = 50000000.0f;
 	JumpImpulse = 350000.0f;
@@ -87,12 +82,9 @@ void AMyProject2Ball::BeginPlay()
 
 	SetArrowRotation();
 
-	TriggerComponent->SetRelativeScale3D(FVector{ FTriggerSphereSize, FTriggerSphereSize, FTriggerSphereSize });
-
 	Ball->SetPhysicsMaxAngularVelocity(MaxBallAngularVelocity);
 	DefaultBallVelocity = MaxBallVelocity;
 	DefaultAdditionalGravity = AdditionalGravity;
-	//GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::White, TEXT("AngularVelocityCHANGED"));
 }
 
 void AMyProject2Ball::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -112,16 +104,7 @@ void AMyProject2Ball::SetupPlayerInputComponent(class UInputComponent* InputComp
 	InputComponent->BindAction("Jump", IE_Pressed, this, &AMyProject2Ball::Jump);
 	InputComponent->BindAction("Possess", IE_Pressed, this, &AMyProject2Ball::CheckForPossession);
 	InputComponent->BindAction("Rope", IE_Pressed, this, &AMyProject2Ball::CheckForRope);
-}
-
-void AMyProject2Ball::OnSphereOverlap(UPrimitiveComponent * OverlappedComp, AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
-{
-
-}
-
-void AMyProject2Ball::OnSphereOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
-{
-
+	InputComponent->BindAction("Restart", IE_Pressed, this, &AMyProject2Ball::InvokeRestart);
 }
 
 void AMyProject2Ball::RotateCamera(float Val)
@@ -180,7 +163,7 @@ bool AMyProject2Ball::RaycastWallCheck(const FVector& direction) const
 	FHitResult* HitResult = new FHitResult();
 	float scale = Ball->GetComponentScale().X;
 
-	FVector Start = Ball->GetComponentLocation(); //this->GetActorLocation();
+	FVector Start = Ball->GetComponentLocation();
 	FVector End = Start + direction.ProjectOnToNormal(direction) * scale * 0.55f;
 
 	FCollisionQueryParams* CQP = new FCollisionQueryParams();
@@ -198,8 +181,7 @@ bool AMyProject2Ball::RaycastWallCheck(const FVector& direction) const
 void AMyProject2Ball::CheckMaxSpeed()
 {
 	FVector Vel = Ball->GetPhysicsLinearVelocity();
-	
-	//GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::White, FString::Printf(TEXT("V: %f, %f, %f"), Vel.X, Vel.Y, Vel.Z));
+
 	Vel.Z = 0.f;
 
 	if (FMath::Abs(Vel.Size()) > MaxBallVelocity)
@@ -231,8 +213,6 @@ void AMyProject2Ball::CameraPointRaycast()
 	FVector End = Start + RopeLength * Direction;
 
 	FCollisionQueryParams* CQP = new FCollisionQueryParams();
-
-	//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Green, FString::Printf(TEXT("Start: (%f, %f, %f), (%f, %f, %f)"), Start.X, Start.Y, Start.Z, Direction.X, Direction.Y, Direction.Z));
 
 	if (GetWorld()->LineTraceSingleByChannel(*HitResult, Start, End, ECC_Camera, *CQP))
 	{
@@ -272,12 +252,12 @@ void AMyProject2Ball::CameraPointRaycast()
 }
 
 
-void AMyProject2Ball::DrawPossessionLine(const FVector firstPoint, const FVector secondPoint) const
+void AMyProject2Ball::DrawPossessionLine(const FVector& firstPoint, const FVector& secondPoint) const
 {
 	DrawDebugLine(GetWorld(), firstPoint, secondPoint, FColor{ 255, 255 ,255 }, false, 1.0f, (uint8)'\000', 5.f);
 }
 
-void AMyProject2Ball::Move(const FVector direction, const FVector perpendicular, const float Val, const FVector rawDirection, bool withTraversalHelp, float ReverseVal)
+void AMyProject2Ball::Move(const FVector& direction, const FVector& perpendicular, const float Val, const FVector& rawDirection, bool withTraversalHelp, float ReverseVal)
 {
 	const FVector Torque = perpendicular * (-1.f) * RollTorque * Val * ReverseVal;
 
@@ -302,7 +282,6 @@ void AMyProject2Ball::Move(const FVector direction, const FVector perpendicular,
 	{
 		/*if (RaycastWallCheck(direction * Val))
 		{*/
-			//GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Green, TEXT("Move"));
 			Ball->AddForce(direction * Val * InAirForce * GetWorld()->GetDeltaSeconds(), NAME_None, true);
 		//}
 	}
@@ -372,8 +351,6 @@ void AMyProject2Ball::CheckForRope()
 
 			FCollisionQueryParams* CQP = new FCollisionQueryParams();
 
-			//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Green, FString::Printf(TEXT("Start: (%f, %f, %f), (%f, %f, %f)"), Start.X, Start.Y, Start.Z, Direction.X, Direction.Y, Direction.Z));
-
 			if (GetWorld()->LineTraceSingleByChannel(*HitResult, Start, End, ECC_Visibility, *CQP))
 			{
 				GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Green, TEXT("ROPE HIT"));
@@ -403,6 +380,11 @@ void AMyProject2Ball::CheckForRope()
 	}
 }
 
+void AMyProject2Ball::InvokeRestart()
+{
+	AAllmightyMaster::RestartLevel(dynamic_cast<APlayerController*> (GetController()));
+}
+
 void AMyProject2Ball::Rope(const FVector & From, const FVector & To, bool LeaveTrace, UPrimitiveComponent* AffectedComponent)
 {
 	FVector Direction = To - From;
@@ -424,10 +406,8 @@ void AMyProject2Ball::Rope(const FVector & From, const FVector & To, bool LeaveT
 	Ball->SetPhysicsLinearVelocity(FVector::ZeroVector);
 	Ball->AddImpulse(Direction * RopeStrength * Ball->GetMass(), NAME_None, true);
 	
-	//Ball->AddForce(NewDirection * RopeStrength * Ball->GetMass(), NAME_None, false);
 	if (LeaveTrace)
 	{
-		//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Green, FString::Printf(TEXT("Direction: (%f, %f, %f)"), Direction.X, Direction.Y, Direction.Z, NewDirection.X, NewDirection.Y, NewDirection.Z));
 		DrawDebugLine(GetWorld(), From, To, FColor{ 255, 255 ,255 }, false, 1.0f, (uint8)'\000', 5.f);
 	}
 
@@ -444,12 +424,7 @@ void AMyProject2Ball::ReloadRope(float OldVelocityLimit)
 	bCanRope = true;
 	AdditionalGravity = DefaultAdditionalGravity;
 	Ball->SetEnableGravity(true);
-	/*FVector Vel = Ball->GetPhysicsLinearVelocity();
-	if (Vel.Z > 0.f) 
-	{
-		Vel.Z = 0.f;
-	}
-	Ball->SetPhysicsLinearVelocity(Vel);*/
+
 	if (OldVelocityLimit <= 0)
 	{
 		MaxBallVelocity = DefaultBallVelocity;
@@ -461,10 +436,10 @@ void AMyProject2Ball::ReloadRope(float OldVelocityLimit)
 }
 
 void AMyProject2Ball::ReloadRope(AGrabableObject * Grabable)
-{
-	
+{	
 	if (Grabable == ObjectToGrab)
 	{
+		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Yellow, TEXT("ZERO"));
 		ReloadRope();
 		ObjectToGrab->ShowGrabable(false);
 		ObjectToGrab = nullptr;

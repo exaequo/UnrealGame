@@ -34,7 +34,8 @@ void AGrabableObject::OnBallOverlap(UPrimitiveComponent * OverlappedComp, AActor
 
 	UStaticMeshComponent* Shape = dynamic_cast<UStaticMeshComponent*>(OtherComp);
 
-	if (Shape != nullptr && Ball != nullptr)
+
+	if (Ball != nullptr)
 	{
 		Ball->ReloadRope();
 	}
@@ -54,13 +55,6 @@ void AGrabableObject::ShowGrabable(bool Value)
 
 FVector AGrabableObject::GetGrabablePosition() const
 {
-	//if (!bAbsoluteGrab)
-	//{
-	//	FVector Loc = RayHitPosition;
-	//	Loc.Z = GrabableMesh->GetComponentLocation().Z;
-	//	return Loc;
-	//}
-
 	return GrabableMesh->GetComponentLocation();
 }
 

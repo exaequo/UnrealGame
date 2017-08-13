@@ -5,8 +5,9 @@
 #include "GameFramework/Actor.h"
 #include "Rotater.generated.h"
 
+
 UCLASS()
-class MYPROJECT2_API ARotater : public AActor
+class MYPROJECT2_API ARotater : public AActor /**Actor rotating at tick with given speed*/
 {
 	GENERATED_BODY()
 	
@@ -23,11 +24,6 @@ public:
 	UPROPERTY(EditAnywhere)
 		float RotationSpeed;
 
-	UFUNCTION()
-		void OnTriggerOverlapBegin(class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
-
-	UFUNCTION()
-		void OnTriggerOverlapEnd(class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

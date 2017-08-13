@@ -6,12 +6,9 @@
 #include "Public/Powerup.h"
 
 
-// Sets default values
+
 APowerup::APowerup()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	
-
 	PowerupRoot = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
 	RootComponent = PowerupRoot;
 
@@ -23,6 +20,7 @@ APowerup::APowerup()
 	TriggerComponent->OnComponentBeginOverlap.AddDynamic(this, &APowerup::OnPowerupOverlap);
 }
 
+/**Checks if the overlap was conducted by player. If so, the powerup is destroyed. */
 void APowerup::OnPowerupOverlap(UPrimitiveComponent * OverlappedComp, AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
 {
 	AMyProject2Ball* Ball = dynamic_cast<AMyProject2Ball*>(OtherActor);
@@ -32,23 +30,14 @@ void APowerup::OnPowerupOverlap(UPrimitiveComponent * OverlappedComp, AActor * O
 	if (Shape != nullptr && Ball != nullptr)
 	{
 		AAllmightyMaster::PowerupCollected(this);
-		//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::White, TEXT("ShouldCollect"));
+		
 		Destroy();
 	}
 }
 
-// Called when the game starts or when spawned
 void APowerup::BeginPlay()
 {
 	Super::BeginPlay();
 	
 	AAllmightyMaster::AddPowerup(this);
 }
-
-// Called every frame
-//void APowerup::Tick( float DeltaTime )
-//{
-//	Super::Tick( DeltaTime );
-//
-//}
-
