@@ -28,6 +28,8 @@ public:
 	UFUNCTION()
 		void OnBallOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
+	const static FVector NothingToGrab;
+
 	void ShowGrabable(bool Value);
 
 	FVector GetGrabablePosition() const;

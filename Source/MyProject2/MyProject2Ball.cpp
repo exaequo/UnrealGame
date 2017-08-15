@@ -2,6 +2,7 @@
 
 #include "MyProject2.h"
 #include "AllmightyMaster.h"
+#include "Public/HUDController.h"
 #include "MyProject2Ball.h"
 
 AMyProject2Ball::AMyProject2Ball()
@@ -18,7 +19,6 @@ AMyProject2Ball::AMyProject2Ball()
 	Ball->SetAngularDamping(0.1f);
 	Ball->SetLinearDamping(0.1f);
 	Ball->BodyInstance.MassScale = 3.5f;
-	//Ball->BodyInstance.MaxAngularVelocity = 800.0f;
 	Ball->SetNotifyRigidBodyCollision(true);
 	Ball->SetupAttachment(RootComponent);
 
@@ -49,6 +49,8 @@ AMyProject2Ball::AMyProject2Ball()
 	TriggerComponent = CreateDefaultSubobject<USphereComponent>(TEXT("TriggerSphere"));
 	TriggerComponent->AttachToComponent(Ball, FAttachmentTransformRules::KeepRelativeTransform);
 
+	HUDController = CreateDefaultSubobject<UHUDController>("HUDController");
+
 	AdditionalGravity = FVector::ZeroVector;
 	RollTorque = 50000000.0f;
 	JumpImpulse = 350000.0f;
@@ -72,6 +74,8 @@ void AMyProject2Ball::Tick(float DeltaSeconds)
 	Ball->AddForce(AdditionalGravity * DeltaSeconds * Ball->GetMass());
 
 	CameraPointRaycast();
+
+	HUDController->UpdatePointerImage(dynamic_cast<APlayerController*>(GetController()), LocationToGrab);
 }
 
 void AMyProject2Ball::BeginPlay()
@@ -223,22 +227,19 @@ void AMyProject2Ball::CameraPointRaycast()
 			if (ObjectToGrab != nullptr)
 			{
 				ObjectToGrab->ShowGrabable(false);
-				ObjectToGrab = Grabable;
-				ObjectToGrab->ShowGrabable(true);
 			}
-			else
-			{
-				ObjectToGrab = Grabable;
-				ObjectToGrab->ShowGrabable(true);
-			}
+			ObjectToGrab = Grabable;
+			ObjectToGrab->ShowGrabable(true);
+			LocationToGrab = ObjectToGrab->GetGrabablePosition();
 		}
 		else
-		{
+		{			
 			if (ObjectToGrab != nullptr)
 			{
 				ObjectToGrab->ShowGrabable(false);
 				ObjectToGrab = nullptr;
 			}
+			LocationToGrab = AGrabableObject::NothingToGrab;
 		}
 	}
 	else
@@ -247,6 +248,21 @@ void AMyProject2Ball::CameraPointRaycast()
 		{
 			ObjectToGrab->ShowGrabable(false);
 			ObjectToGrab = nullptr;
+			LocationToGrab = AGrabableObject::NothingToGrab;
+		}
+		
+	}
+
+
+	if (LocationToGrab == AGrabableObject::NothingToGrab)
+	{
+		Direction = SpringArm->GetForwardVector();
+		Start = Ball->GetComponentLocation(); //this->GetActorLocation();
+		End = Start + RopeLength * Direction;
+
+		if (GetWorld()->LineTraceSingleByChannel(*HitResult, Start, End, ECC_Camera, *CQP))
+		{
+			LocationToGrab = HitResult->Location;
 		}
 	}
 }
@@ -333,7 +349,7 @@ void AMyProject2Ball::NotifyHit(class UPrimitiveComponent* MyComp, class AActor*
 
 void AMyProject2Ball::ChangeBalls()
 {
-
+	//TODO Implement
 
 }
 
@@ -341,42 +357,50 @@ void AMyProject2Ball::CheckForRope()
 {
 	if (bCanRope)
 	{
-		FVector Direction = SpringArm->GetForwardVector();
-		FVector Start = Ball->GetComponentLocation(); //this->GetActorLocation();
-		FVector End = Start + RopeLength * Direction;
-
-		if (ObjectToGrab == nullptr)
+		if (LocationToGrab != AGrabableObject::NothingToGrab)
 		{
-			FHitResult* HitResult = new FHitResult();
-
-			FCollisionQueryParams* CQP = new FCollisionQueryParams();
-
-			if (GetWorld()->LineTraceSingleByChannel(*HitResult, Start, End, ECC_Visibility, *CQP))
-			{
-				GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Green, TEXT("ROPE HIT"));
-
-				AGrabableObject* Gr = dynamic_cast<AGrabableObject*>(HitResult->GetActor());
-				if (Gr == nullptr)
-				{
-					Rope(Start, HitResult->ImpactPoint, true, HitResult->GetComponent());
-				}
-				else
-				{
-					Rope(Start, Gr->GetGrabablePosition());
-				}
-				
-
-			}
-			else
-			{
-				GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, TEXT("ROPE DIDNT HIT"));
-			}
+			Rope(Ball->GetComponentLocation(), LocationToGrab);
 		}
 		else
 		{
+			GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, TEXT("ROPE DIDNT HIT"));
+		}
+		//FVector Direction = SpringArm->GetForwardVector();
+		//FVector Start = Ball->GetComponentLocation(); //this->GetActorLocation();
+		//FVector End = Start + RopeLength * Direction;
 
-			Rope(Start, ObjectToGrab->GetGrabablePosition());
-		}		
+		//if (ObjectToGrab == nullptr)
+		//{
+		//	FHitResult* HitResult = new FHitResult();
+
+		//	FCollisionQueryParams* CQP = new FCollisionQueryParams();
+
+		//	if (GetWorld()->LineTraceSingleByChannel(*HitResult, Start, End, ECC_Visibility, *CQP))
+		//	{
+		//		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Green, TEXT("ROPE HIT"));
+
+		//		AGrabableObject* Gr = dynamic_cast<AGrabableObject*>(HitResult->GetActor());
+		//		if (Gr == nullptr)
+		//		{
+		//			Rope(Start, HitResult->ImpactPoint, true, HitResult->GetComponent());
+		//		}
+		//		else
+		//		{
+		//			Rope(Start, Gr->GetGrabablePosition());
+		//		}
+		//		
+
+		//	}
+		//	else
+		//	{
+		//		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, TEXT("ROPE DIDNT HIT"));
+		//	}
+		//}
+		//else
+		//{
+
+		//	Rope(Start, ObjectToGrab->GetGrabablePosition());
+		//}		
 	}
 }
 
@@ -417,6 +441,11 @@ void AMyProject2Ball::Rope(const FVector & From, const FVector & To, bool LeaveT
 		AffectedComponent->AddForce(-Direction * RopeStrength * Ball->GetMass() * RopeFreeObjectMovementMultplier, NAME_None, true);
 	}
 	
+}
+
+UHUDController * AMyProject2Ball::GetHUDController()
+{
+	return HUDController;
 }
 
 void AMyProject2Ball::ReloadRope(float OldVelocityLimit)

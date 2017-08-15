@@ -2,6 +2,7 @@
 #pragma once
 #include "GameFramework/Pawn.h"
 #include "Public/GrabableObject.h"
+#include "Public/HUDController.h"
 #include "MyProject2Ball.generated.h"
 
 UCLASS(config=Game)
@@ -34,29 +35,59 @@ public:
 	UPROPERTY(EditAnywhere, Category = Ball)
 	USceneComponent* RootComp;
 
-	/** Vertical impulse to apply when pressing jump */
-	UPROPERTY(EditAnywhere, Category=Ball)
-	float JumpImpulse;
-
-	/** Torque to apply when trying to roll ball */
-	UPROPERTY(EditAnywhere, Category=Ball)
-	float RollTorque;
-
 	/** Triggering part of the ball */
 	UPROPERTY(EditAnywhere)
 	UShapeComponent* TriggerComponent;
 
+	/** Defines if the player can use rope */
+	bool bCanRope;
+
+	/** Defines wheter or not player is on the door switch (OBSOLETE) */
+	bool bIsOnSwitch;
+
+	/** Indicates whether we can currently jump */
+	bool bCanJump;
+
+	/** Return a pointer to the current HUD Controller*/
+	UFUNCTION(BlueprintPure, Category = "HUD")
+		UHUDController* GetHUDController();
+
+	/** Reloads the rope and restores the gravity to the Ball */
+	UFUNCTION()
+	void ReloadRope(float OldVelocityLimit = -1.f);
+
+	/** Reloads the rope and restores the gravity to the Ball (Version to be used by GrabableObjects) */
+	void ReloadRope(AGrabableObject* Grabable);
+
+	virtual void Tick(float DeltaSeconds) override;
+
+protected:
+	/** Pointer to the object that the ball will rope to if player presses the Rope button */
+	UPROPERTY()
+		AGrabableObject* ObjectToGrab;
+
+	UPROPERTY(EditAnywhere, Category = "HUD")
+		UHUDController* HUDController;
+
+	/** Vertical impulse to apply when pressing jump */
+	UPROPERTY(EditAnywhere, Category = Ball)
+		float JumpImpulse;
+
+	/** Torque to apply when trying to roll ball */
+	UPROPERTY(EditAnywhere, Category = Ball)
+		float RollTorque;
+
 	/** Force that will be applied when players try to move mid air */
 	UPROPERTY(EditAnywhere, Category = Ball)
-	float InAirForce;
+		float InAirForce;
 
 	/** Maximal linear velocity the ball can achieve */
 	UPROPERTY(EditAnywhere, Category = Ball)
-	float MaxBallVelocity;
-	
+		float MaxBallVelocity;
+
 	/** Maximal angular velocity the ball can achieve */
 	UPROPERTY(EditAnywhere, Category = Ball)
-	float MaxBallAngularVelocity;
+		float MaxBallAngularVelocity;
 
 	/** Amount of force that will be applied to ball when roping */
 	UPROPERTY(EditAnywhere, Category = Rope)
@@ -80,38 +111,16 @@ public:
 
 	/** Sensitivity of the camera during mouse movements */
 	UPROPERTY(EditAnywhere, Category = Camera)
-	float CameraRotationSensitivity;
+		float CameraRotationSensitivity;
 
 	/** Affects how high the raycasts for finding grabable objects for rope will go (affects the angle that the raycasts are shot at)*/
 	UPROPERTY(EditAnywhere, Category = Camera)
 		float CameraRaycastUpModifier;
 
+	FVector LocationToGrab;
+
 	/** Handler for Timer of the rope */
 	FTimerHandle RopeTimer;
-
-	/** Defines if the player can use rope */
-	bool bCanRope;
-	
-	/** Defines wheter or not player is on the door switch (OBSOLETE) */
-	bool bIsOnSwitch;
-
-	/** Indicates whether we can currently jump, use to prevent double jumping */
-	bool bCanJump;
-	
-	/** Reloads the rope and restores the gravity to the Ball */
-	UFUNCTION()
-	void ReloadRope(float OldVelocityLimit = -1.f);
-
-	/** Reloads the rope and restores the gravity to the Ball (Version to be used by GrabableObjects) */
-	void ReloadRope(AGrabableObject* Grabable);
-
-	virtual void Tick(float DeltaSeconds) override;
-
-protected:
-
-	/** Pointer to the object that the ball will rope to if player presses the Rope button */
-	UPROPERTY()
-	AGrabableObject* ObjectToGrab;
 
 	/** Default velocity of the ball (Set at the BeginPlay event) */
 	float DefaultBallVelocity;	

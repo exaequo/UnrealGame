@@ -4,6 +4,7 @@
 #include "MyProject2Ball.h"
 #include "GrabableObject.h"
 
+const FVector AGrabableObject::NothingToGrab = FVector{ TNumericLimits<float>::Max(), TNumericLimits<float>::Max(), TNumericLimits<float>::Max() };
 
 // Sets default values
 AGrabableObject::AGrabableObject()
@@ -22,6 +23,7 @@ AGrabableObject::AGrabableObject()
 	static ConstructorHelpers::FObjectFinder <UMaterialInterface>Material_Selected(TEXT("Material'/Game/MINE/Materials/GrabbedMaterial.GrabbedMaterial'"));
 	static ConstructorHelpers::FObjectFinder <UMaterialInterface>Material_NotSelected(TEXT("Material'/Game/MINE/Materials/NotGrabbedMaterial.NotGrabbedMaterial'"));
 
+	
 	SelectedMaterial = Material_Selected.Object;
 	NotSelectedMaterial = Material_NotSelected.Object;
 	

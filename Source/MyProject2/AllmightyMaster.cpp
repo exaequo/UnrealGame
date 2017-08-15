@@ -23,7 +23,7 @@ void AAllmightyMaster::BeginPlay()
 	Super::BeginPlay();
 
 	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::White, TEXT("GAME START"));
-	GEngine->AddOnScreenDebugMessage(-1, 60.f, FColor::Green, TEXT("PRESS 'WSAD' to move, LMB to jump, RMB to rope"));
+	GEngine->AddOnScreenDebugMessage(-1, 60.f, FColor::Green, TEXT("PRESS 'WSAD' to move, Space/LMB to jump, RMB to rope"));
 }
 
 void AAllmightyMaster::PowerupCollected(APowerup* Collected)
