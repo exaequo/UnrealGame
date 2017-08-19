@@ -19,7 +19,7 @@ public:
 	AAllmightyMaster();
 	
 	static int32 PowerupCount;
-
+	
 	virtual void BeginPlay() override;
 
 	static void PowerupCollected(APowerup* Collected);

@@ -36,10 +36,11 @@ void AGrabableObject::OnBallOverlap(UPrimitiveComponent * OverlappedComp, AActor
 
 	UStaticMeshComponent* Shape = dynamic_cast<UStaticMeshComponent*>(OtherComp);
 
-
+	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::White, TEXT("-1"));
 	if (Ball != nullptr)
 	{
-		Ball->ReloadRope();
+		//GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Yellow, TEXT("0"));
+		Ball->ReloadRope(this);
 	}
 }
 

@@ -120,13 +120,22 @@ protected:
 	FVector LocationToGrab;
 
 	/** Handler for Timer of the rope */
-	FTimerHandle RopeTimer;
+	FTimerHandle RopeTimerHandle;
+
+	/** Handler for Timer of the slow time */
+	FTimerHandle TimeSlowTimerHandle;
 
 	/** Default velocity of the ball (Set at the BeginPlay event) */
 	float DefaultBallVelocity;	
 
 	/** Default Gravity of the ball (Set at BeginPlay event) */
 	FVector DefaultAdditionalGravity;
+
+	/** Time for which the time stop effect will take place (time between call of Start and Stop SlowTime functions) */
+	static float TimeSlowTime;
+
+	/** Multiplier in which the time will be scaled by during time slow */
+	static float TimeSlowSlowMultiplier;
 
 	void BeginPlay() override;
 
@@ -172,6 +181,14 @@ protected:
 	UFUNCTION()
 	void InvokeRestart();
 
+	/** Starts the slow of everything but the ball */
+	UFUNCTION()
+	void StartSlowTime();
+
+	/** Stops the slow of everything but the ball */
+	UFUNCTION()
+	void StopSlowTime();
+
 	/** Turns of gravity and then adds impulse to the ball making it move in a specified direction */
 	void Rope(const FVector& From, const FVector& To, bool LeaveTrace = true, UPrimitiveComponent* AffectedComponent = nullptr);
 	
@@ -192,6 +209,8 @@ protected:
 
 	/** Default Move function used in MoveForward and MoveRight */
 	void Move(const FVector& direction, const FVector& perpendicular, const float Val, const FVector& rawDirection, bool withTraversalHelp = false, float ReverseVal = 1.f);
+
+	void PrematureSlowTimeStop();
 
 public:
 	/** Returns Ball subobject **/

@@ -5,6 +5,9 @@
 #include "Public/HUDController.h"
 #include "MyProject2Ball.h"
 
+float AMyProject2Ball::TimeSlowTime{ 2.f };
+float AMyProject2Ball::TimeSlowSlowMultiplier{ 0.3f };
+
 AMyProject2Ball::AMyProject2Ball()
 {
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> BallMesh(TEXT("/Game/Rolling/Meshes/BallMesh.BallMesh"));
@@ -109,6 +112,9 @@ void AMyProject2Ball::SetupPlayerInputComponent(class UInputComponent* InputComp
 	InputComponent->BindAction("Possess", IE_Pressed, this, &AMyProject2Ball::CheckForPossession);
 	InputComponent->BindAction("Rope", IE_Pressed, this, &AMyProject2Ball::CheckForRope);
 	InputComponent->BindAction("Restart", IE_Pressed, this, &AMyProject2Ball::InvokeRestart);
+	/*InputComponent->BindAction("SlowTime", IE_Pressed, this, &AMyProject2Ball::StartSlowTime);
+	InputComponent->BindAction("SlowTime", IE_Released, this, &AMyProject2Ball::StopSlowTime);*/
+
 }
 
 void AMyProject2Ball::RotateCamera(float Val)
@@ -307,6 +313,14 @@ void AMyProject2Ball::Move(const FVector& direction, const FVector& perpendicula
 	CheckMaxSpeed();
 }
 
+void AMyProject2Ball::PrematureSlowTimeStop()
+{
+	if (GetWorld()->GetTimerManager().IsTimerActive(TimeSlowTimerHandle))
+	{
+		StopSlowTime();
+	}
+}
+
 void AMyProject2Ball::MoveRight(float Val)
 {
 	
@@ -345,6 +359,8 @@ void AMyProject2Ball::NotifyHit(class UPrimitiveComponent* MyComp, class AActor*
 	{
 		ReloadRope(DefaultBallVelocity);
 	}
+
+	PrematureSlowTimeStop();
 }
 
 void AMyProject2Ball::ChangeBalls()
@@ -364,49 +380,37 @@ void AMyProject2Ball::CheckForRope()
 		else
 		{
 			GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, TEXT("ROPE DIDNT HIT"));
-		}
-		//FVector Direction = SpringArm->GetForwardVector();
-		//FVector Start = Ball->GetComponentLocation(); //this->GetActorLocation();
-		//FVector End = Start + RopeLength * Direction;
+		}	
 
-		//if (ObjectToGrab == nullptr)
-		//{
-		//	FHitResult* HitResult = new FHitResult();
-
-		//	FCollisionQueryParams* CQP = new FCollisionQueryParams();
-
-		//	if (GetWorld()->LineTraceSingleByChannel(*HitResult, Start, End, ECC_Visibility, *CQP))
-		//	{
-		//		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Green, TEXT("ROPE HIT"));
-
-		//		AGrabableObject* Gr = dynamic_cast<AGrabableObject*>(HitResult->GetActor());
-		//		if (Gr == nullptr)
-		//		{
-		//			Rope(Start, HitResult->ImpactPoint, true, HitResult->GetComponent());
-		//		}
-		//		else
-		//		{
-		//			Rope(Start, Gr->GetGrabablePosition());
-		//		}
-		//		
-
-		//	}
-		//	else
-		//	{
-		//		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, TEXT("ROPE DIDNT HIT"));
-		//	}
-		//}
-		//else
-		//{
-
-		//	Rope(Start, ObjectToGrab->GetGrabablePosition());
-		//}		
+		PrematureSlowTimeStop();
 	}
 }
 
 void AMyProject2Ball::InvokeRestart()
 {
 	AAllmightyMaster::RestartLevel(dynamic_cast<APlayerController*> (GetController()));
+}
+
+void AMyProject2Ball::StartSlowTime()
+{
+	if (!GetWorld()->GetTimerManager().IsTimerActive(TimeSlowTimerHandle))
+	{
+		UGameplayStatics::SetGlobalTimeDilation(GetWorld(), TimeSlowSlowMultiplier);
+		this->CustomTimeDilation = 10.f;
+
+		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Yellow, TEXT("START SLOW TIME"));
+
+		GetWorld()->GetTimerManager().SetTimer(TimeSlowTimerHandle, this, &AMyProject2Ball::StopSlowTime, TimeSlowTime * TimeSlowSlowMultiplier);
+	}
+}
+
+void AMyProject2Ball::StopSlowTime()
+{
+	UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 1.f);
+	this->CustomTimeDilation = 1.f;
+	GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Yellow, TEXT("STOP SLOW TIME"));
+	
+	GetWorld()->GetTimerManager().ClearTimer(TimeSlowTimerHandle);
 }
 
 void AMyProject2Ball::Rope(const FVector & From, const FVector & To, bool LeaveTrace, UPrimitiveComponent* AffectedComponent)
@@ -423,8 +427,8 @@ void AMyProject2Ball::Rope(const FVector & From, const FVector & To, bool LeaveT
 	Ball->SetEnableGravity(false);
 	AdditionalGravity = FVector::ZeroVector;
 
-	GetWorld()->GetTimerManager().ClearTimer(RopeTimer);
-	GetWorld()->GetTimerManager().SetTimer(RopeTimer, TimerDelegate, RopeReloadTime, false);
+	GetWorld()->GetTimerManager().ClearTimer(RopeTimerHandle);
+	GetWorld()->GetTimerManager().SetTimer(RopeTimerHandle, TimerDelegate, RopeReloadTime, false);
 
 
 	Ball->SetPhysicsLinearVelocity(FVector::ZeroVector);
@@ -466,11 +470,13 @@ void AMyProject2Ball::ReloadRope(float OldVelocityLimit)
 
 void AMyProject2Ball::ReloadRope(AGrabableObject * Grabable)
 {	
+	ReloadRope();
 	if (Grabable == ObjectToGrab)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Yellow, TEXT("ZERO"));
-		ReloadRope();
+		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Yellow, TEXT("2"));
+		StartSlowTime();
 		ObjectToGrab->ShowGrabable(false);
 		ObjectToGrab = nullptr;
+
 	}
 }
