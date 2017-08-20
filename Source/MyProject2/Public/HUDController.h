@@ -32,6 +32,9 @@ public:
 		FLinearColor GetPointerImageRenderColor() const;
 
 	UFUNCTION(BlueprintPure, Category = "HUD")
+		FVector2D GetPointerImageScale() const;
+
+	UFUNCTION(BlueprintPure, Category = "HUD")
 		float GetOverlayImageColorAlpha() const;
 	
 	UFUNCTION()
@@ -41,7 +44,7 @@ public:
 	void Init(class AMyProject2Ball* Parent) const;
 
 	/** Updates the Pointer Image by translating world point to screen point */
-	void UpdatePointerImage(const APlayerController* Player, const FVector& WorldLocation);
+	void UpdatePointerImage(const APlayerController* Player, const FVector& WorldLocation, float ScaleFactor);
 
 	// Called every frame
 	virtual void TickComponent( float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction ) override;
@@ -53,6 +56,8 @@ private:
 	/** Current position of the pointer Image to be seen on the screen */
 	FVector2D PointerImagePosition;
 	
+	float PointerImageScale;
+
 	/** Value indicating wheter or not PointerImage on the HUD should be rendered */
 	bool bShouldPointerImageRender;
 	

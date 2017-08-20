@@ -78,7 +78,10 @@ void AMyProject2Ball::Tick(float DeltaSeconds)
 
 	CameraPointRaycast();
 
-	HUDController->UpdatePointerImage(dynamic_cast<APlayerController*>(GetController()), LocationToGrab);
+	float SizeMultiplier = 1.f - (FVector::Dist(LocationToGrab, Camera->GetComponentLocation()) / RopeLength);
+	
+
+	HUDController->UpdatePointerImage(dynamic_cast<APlayerController*>(GetController()), LocationToGrab, SizeMultiplier );
 }
 
 void AMyProject2Ball::BeginPlay()

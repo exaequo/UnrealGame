@@ -12,6 +12,8 @@ UHUDController::UHUDController()
 	PrimaryComponentTick.bCanEverTick = false;
 
 	OverlayImageAlpha = 0.f;
+
+	PointerImageScale = 1.f;
 }
 
 
@@ -45,6 +47,11 @@ FLinearColor UHUDController::GetPointerImageRenderColor() const
 	return ReturnColor;
 }
 
+FVector2D UHUDController::GetPointerImageScale() const
+{
+	return FVector2D{ PointerImageScale, PointerImageScale };
+}
+
 float UHUDController::GetOverlayImageColorAlpha() const
 {
 	return OverlayImageAlpha;
@@ -66,7 +73,7 @@ void UHUDController::Init(AMyProject2Ball * Parent) const
 	GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, TEXT("INIT"));
 }
 
-void UHUDController::UpdatePointerImage(const APlayerController* Player, const FVector & WorldLocation)
+void UHUDController::UpdatePointerImage(const APlayerController* Player, const FVector & WorldLocation, float ScaleFactor)
 {
 	bShouldPointerImageRender = WorldLocation != AGrabableObject::NothingToGrab;
 	
@@ -79,6 +86,8 @@ void UHUDController::UpdatePointerImage(const APlayerController* Player, const F
 		ScreenLocation *= 1080.f / FMath::Min(ViewportSize.X, ViewportSize.Y);//#MAGIC_UNREAL_NUMBER
 
 		SetPointerImagePosition(ScreenLocation);
+
+		PointerImageScale = FMath::Clamp(ScaleFactor, 0.2f, 1.f);
 	}
 }
 
