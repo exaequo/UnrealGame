@@ -92,6 +92,8 @@ void AMyProject2Ball::BeginPlay()
 	Ball->SetPhysicsMaxAngularVelocity(MaxBallAngularVelocity);
 	DefaultBallVelocity = MaxBallVelocity;
 	DefaultAdditionalGravity = AdditionalGravity;
+
+	HUDController->Init(this);
 }
 
 void AMyProject2Ball::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -121,7 +123,7 @@ void AMyProject2Ball::RotateCamera(float Val)
 {
 	FRotator rot = SpringArm->GetComponentRotation();
 
-	rot.Yaw += Val * GetWorld()->DeltaTimeSeconds * CameraRotationSensitivity;
+	rot.Yaw += Val * GetWorld()->DeltaTimeSeconds * CameraRotationSensitivity * (1.f / UGameplayStatics::GetGlobalTimeDilation(GetWorld()));
 
 	SpringArm->SetRelativeRotation(rot);
 
@@ -132,7 +134,7 @@ void AMyProject2Ball::PitchCamera(float Val)
 {
 	FRotator rot = SpringArm->GetComponentRotation();
 
-	rot.Pitch =  FMath::Clamp( rot.Pitch + Val * GetWorld()->DeltaTimeSeconds * CameraRotationSensitivity, -80.f, -5.f);
+	rot.Pitch =  FMath::Clamp( rot.Pitch + Val * GetWorld()->DeltaTimeSeconds * CameraRotationSensitivity  * (1.f / UGameplayStatics::GetGlobalTimeDilation(GetWorld())), -80.f, -5.f);
 
 	SpringArm->SetRelativeRotation(rot);
 }
@@ -396,7 +398,11 @@ void AMyProject2Ball::StartSlowTime()
 	if (!GetWorld()->GetTimerManager().IsTimerActive(TimeSlowTimerHandle))
 	{
 		UGameplayStatics::SetGlobalTimeDilation(GetWorld(), TimeSlowSlowMultiplier);
-		this->CustomTimeDilation = 10.f;
+		this->CustomTimeDilation = 1.f / TimeSlowSlowMultiplier;
+	
+		OnGameSpeedChangeEvent.Broadcast(TimeSlowSlowMultiplier);
+		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, TEXT("BROADCAST"));
+
 
 		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Yellow, TEXT("START SLOW TIME"));
 
@@ -407,8 +413,12 @@ void AMyProject2Ball::StartSlowTime()
 void AMyProject2Ball::StopSlowTime()
 {
 	UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 1.f);
+
+	OnGameSpeedChangeEvent.Broadcast(1.f);
+
 	this->CustomTimeDilation = 1.f;
 	GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Yellow, TEXT("STOP SLOW TIME"));
+
 	
 	GetWorld()->GetTimerManager().ClearTimer(TimeSlowTimerHandle);
 }
@@ -474,7 +484,10 @@ void AMyProject2Ball::ReloadRope(AGrabableObject * Grabable)
 	if (Grabable == ObjectToGrab)
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Yellow, TEXT("2"));
-		StartSlowTime();
+		if (Grabable != nullptr && Grabable->bCanSlowTime)
+		{
+			StartSlowTime();
+		}
 		ObjectToGrab->ShowGrabable(false);
 		ObjectToGrab = nullptr;
 

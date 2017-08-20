@@ -5,6 +5,9 @@
 #include "Public/HUDController.h"
 #include "MyProject2Ball.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGameSpeedChange, float, NewSpeed);
+
+
 UCLASS(config=Game)
 class AMyProject2Ball : public APawn /**Main Pawn controllable by player*/
 {
@@ -38,6 +41,9 @@ public:
 	/** Triggering part of the ball */
 	UPROPERTY(EditAnywhere)
 	UShapeComponent* TriggerComponent;
+
+	UPROPERTY(BlueprintAssignable, Category = "Events")
+	FOnGameSpeedChange OnGameSpeedChangeEvent;
 
 	/** Defines if the player can use rope */
 	bool bCanRope;

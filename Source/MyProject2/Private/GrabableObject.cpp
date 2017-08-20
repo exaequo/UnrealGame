@@ -28,6 +28,8 @@ AGrabableObject::AGrabableObject()
 	NotSelectedMaterial = Material_NotSelected.Object;
 	
 	GrabableMesh->SetMaterial(0, NotSelectedMaterial);
+
+	bCanSlowTime = false;
 }
 
 void AGrabableObject::OnBallOverlap(UPrimitiveComponent * OverlappedComp, AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)

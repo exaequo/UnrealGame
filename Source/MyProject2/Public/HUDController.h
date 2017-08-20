@@ -31,6 +31,15 @@ public:
 	UFUNCTION(BlueprintPure, Category = "HUD")
 		FLinearColor GetPointerImageRenderColor() const;
 
+	UFUNCTION(BlueprintPure, Category = "HUD")
+		float GetOverlayImageColorAlpha() const;
+	
+	UFUNCTION()
+	void SetOverlayImageAlpha(float Value);
+
+	/** Initiazes values of HUD */
+	void Init(class AMyProject2Ball* Parent) const;
+
 	/** Updates the Pointer Image by translating world point to screen point */
 	void UpdatePointerImage(const APlayerController* Player, const FVector& WorldLocation);
 
@@ -39,11 +48,12 @@ public:
 		
 private:
 
+	float OverlayImageAlpha;
+
 	/** Current position of the pointer Image to be seen on the screen */
 	FVector2D PointerImagePosition;
 	
 	/** Value indicating wheter or not PointerImage on the HUD should be rendered */
 	bool bShouldPointerImageRender;
-
 	
 };
