@@ -175,15 +175,15 @@ bool AMyProject2Ball::RaycastWallCheck(const FVector& direction) const
 {
 	bool value = false;
 	
-	FHitResult* HitResult = new FHitResult();
+	FHitResult HitResult{};
 	float scale = Ball->GetComponentScale().X;
 
 	FVector Start = Ball->GetComponentLocation();
 	FVector End = Start + direction.ProjectOnToNormal(direction) * scale * 0.55f;
 
-	FCollisionQueryParams* CQP = new FCollisionQueryParams();
+	FCollisionQueryParams CQP{};
 
-	if (GetWorld()->LineTraceSingleByChannel(*HitResult, Start, End, ECC_Visibility, *CQP))
+	if (GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility, CQP))
 	{
 		value = true;
 	}
@@ -217,7 +217,7 @@ void AMyProject2Ball::SetArrowRotation()
 
 void AMyProject2Ball::CameraPointRaycast()
 {
-	FHitResult* HitResult = new FHitResult();
+	FHitResult HitResult{};
 
 	FVector Direction = SpringArm->GetForwardVector();
 	Direction += FVector::UpVector * CameraRaycastUpModifier;
@@ -227,11 +227,11 @@ void AMyProject2Ball::CameraPointRaycast()
 	FVector Start = Camera->GetComponentLocation() + Direction * DistanceFromPlayer; //this->GetActorLocation();
 	FVector End = Start + RopeLength * Direction;
 
-	FCollisionQueryParams* CQP = new FCollisionQueryParams();
+	FCollisionQueryParams CQP{};
 
-	if (GetWorld()->LineTraceSingleByChannel(*HitResult, Start, End, ECC_Camera, *CQP))
+	if (GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Camera, CQP))
 	{
-		AGrabableObject* Grabable = dynamic_cast<AGrabableObject*>(HitResult->GetActor());
+		AGrabableObject* Grabable = Cast<AGrabableObject>(HitResult.GetActor());
 
 		if (Grabable != nullptr)
 		{
@@ -271,9 +271,9 @@ void AMyProject2Ball::CameraPointRaycast()
 		Start = Ball->GetComponentLocation(); //this->GetActorLocation();
 		End = Start + RopeLength * Direction;
 
-		if (GetWorld()->LineTraceSingleByChannel(*HitResult, Start, End, ECC_Camera, *CQP))
+		if (GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Camera, CQP))
 		{
-			LocationToGrab = HitResult->Location;
+			LocationToGrab = HitResult.Location;
 		}
 	}
 }
