@@ -147,14 +147,11 @@ protected:
 
 	void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
-	/** Called for side to side input */
-	void MoveRight(float Val);
+	///** Called for side to side input */
+	//void MoveRight(float Val);
 
-	/** Called to move ball forwards and backwards */
-	void MoveForward(float Val);
-
-	/** Handle jump action. */
-	void Jump();
+	///** Called to move ball forwards and backwards */
+	//void MoveForward(float Val);
 
 	// AActor interface
 	virtual void NotifyHit(class UPrimitiveComponent* MyComp, class AActor* Other, class UPrimitiveComponent* OtherComp, bool bSelfMoved, FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit) override;
@@ -178,14 +175,6 @@ protected:
 	/** Will be used for creating a ball clone */
 	UFUNCTION()
 	void ChangeBalls();
-
-	/** Checks if player can use rope and if so, invokes Rope method */
-	UFUNCTION()
-	void CheckForRope();
-	
-	/** Invokes the restart method of AAllmightyMaster */
-	UFUNCTION()
-	void InvokeRestart();
 
 	/** Starts the slow of everything but the ball */
 	UFUNCTION()

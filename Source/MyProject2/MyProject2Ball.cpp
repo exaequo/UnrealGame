@@ -107,19 +107,65 @@ void AMyProject2Ball::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 void AMyProject2Ball::SetupPlayerInputComponent(class UInputComponent* InputComponent)
 {
-	// set up gameplay key bindings
-	InputComponent->BindAxis("MoveRight", this, &AMyProject2Ball::MoveRight);
-	InputComponent->BindAxis("MoveForward", this, &AMyProject2Ball::MoveForward);
+	// set up restart key
+	FInputActionBinding ActionBinding{ "Restart", IE_Pressed };
+	FInputAxisBinding AxisBinding{ "MoveRight" };
+
+	ActionBinding.ActionDelegate.GetDelegateForManualSet().BindLambda(
+		[this]() { AAllmightyMaster::RestartLevel(dynamic_cast<APlayerController*> (GetController())); }
+	);
+	InputComponent->AddActionBinding(ActionBinding);
+
+	// set up jump key
+	ActionBinding.ActionName = "Jump";
+	ActionBinding.ActionDelegate.GetDelegateForManualSet().BindLambda(
+		[this]() {
+			if (bCanJump){
+				const FVector Impulse = FVector(0.f, 0.f, JumpImpulse);
+				Ball->AddImpulse(Impulse, NAME_None, true);
+				bCanJump = false;
+			}
+	});
+	InputComponent->AddActionBinding(ActionBinding);
+
+	// set up rope key
+	ActionBinding.ActionName = "Rope";
+	ActionBinding.ActionDelegate.GetDelegateForManualSet().BindLambda(
+		[this]() {
+			if (bCanRope)
+			{
+				if (LocationToGrab != AGrabableObject::NothingToGrab)
+				{
+					Rope(Ball->GetComponentLocation(), LocationToGrab);
+				}
+				else
+				{
+					GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, TEXT("ROPE DIDNT HIT"));
+				}
+
+				PrematureSlowTimeStop();
+			}
+	});
+	InputComponent->AddActionBinding(ActionBinding);
+
+	// set up move right axis
+	AxisBinding.AxisDelegate.GetDelegateForManualSet().BindLambda(
+		[this](float Val) {Move(Arrow->GetRightVector(), Arrow->GetForwardVector(), Val, FVector::RightVector);
+	});
+	InputComponent->AxisBindings.Add(AxisBinding);
+
+	// set up move forward axis
+	AxisBinding.AxisName = "MoveForward";
+	AxisBinding.AxisDelegate.GetDelegateForManualSet().BindLambda(
+		[this](float Val) {Move(Arrow->GetForwardVector(), Arrow->GetRightVector(), Val, FVector::ForwardVector, true, -1.f);
+	});
+	InputComponent->AxisBindings.Add(AxisBinding);
+
 	InputComponent->BindAxis("Rotate", this, &AMyProject2Ball::RotateCamera);
 	InputComponent->BindAxis("RotatePitch", this, &AMyProject2Ball::PitchCamera);
 	
-	InputComponent->BindAction("Jump", IE_Pressed, this, &AMyProject2Ball::Jump);
+	//InputComponent->BindAction("Jump", IE_Pressed, this, &AMyProject2Ball::Jump);
 	InputComponent->BindAction("Possess", IE_Pressed, this, &AMyProject2Ball::CheckForPossession);
-	InputComponent->BindAction("Rope", IE_Pressed, this, &AMyProject2Ball::CheckForRope);
-	InputComponent->BindAction("Restart", IE_Pressed, this, &AMyProject2Ball::InvokeRestart);
-	/*InputComponent->BindAction("SlowTime", IE_Pressed, this, &AMyProject2Ball::StartSlowTime);
-	InputComponent->BindAction("SlowTime", IE_Released, this, &AMyProject2Ball::StopSlowTime);*/
-
 }
 
 void AMyProject2Ball::RotateCamera(float Val)
@@ -309,7 +355,7 @@ void AMyProject2Ball::Move(const FVector& direction, const FVector& perpendicula
 	{
 		/*if (RaycastWallCheck(direction * Val))
 		{*/
-			Ball->AddForce(direction * Val * InAirForce * GetWorld()->GetDeltaSeconds(), NAME_None, true);
+		Ball->AddForce(direction * Val * InAirForce * GetWorld()->GetDeltaSeconds(), NAME_None, true);
 		//}
 	}
 
@@ -323,30 +369,6 @@ void AMyProject2Ball::PrematureSlowTimeStop()
 	if (GetWorld()->GetTimerManager().IsTimerActive(TimeSlowTimerHandle))
 	{
 		StopSlowTime();
-	}
-}
-
-void AMyProject2Ball::MoveRight(float Val)
-{
-	
-	Move(Arrow->GetRightVector(), Arrow->GetForwardVector(), Val, FVector::RightVector);
-
-}
-
-void AMyProject2Ball::MoveForward(float Val)
-{
-
-	Move(Arrow->GetForwardVector(), Arrow->GetRightVector(), Val, FVector::ForwardVector, true, -1.f);
-
-}
-
-void AMyProject2Ball::Jump()
-{
-	if(bCanJump)
-	{
-		const FVector Impulse = FVector(0.f, 0.f, JumpImpulse);
-		Ball->AddImpulse(Impulse, NAME_None, true);
-		bCanJump = false;
 	}
 }
 
@@ -372,28 +394,6 @@ void AMyProject2Ball::ChangeBalls()
 {
 	//TODO Implement
 
-}
-
-void AMyProject2Ball::CheckForRope()
-{
-	if (bCanRope)
-	{
-		if (LocationToGrab != AGrabableObject::NothingToGrab)
-		{
-			Rope(Ball->GetComponentLocation(), LocationToGrab);
-		}
-		else
-		{
-			GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, TEXT("ROPE DIDNT HIT"));
-		}	
-
-		PrematureSlowTimeStop();
-	}
-}
-
-void AMyProject2Ball::InvokeRestart()
-{
-	AAllmightyMaster::RestartLevel(dynamic_cast<APlayerController*> (GetController()));
 }
 
 void AMyProject2Ball::StartSlowTime()
