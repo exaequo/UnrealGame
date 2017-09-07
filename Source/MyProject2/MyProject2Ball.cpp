@@ -80,6 +80,13 @@ void AMyProject2Ball::Tick(float DeltaSeconds)
 
 	float SizeMultiplier = 1.f - (FVector::Dist(LocationToGrab, Camera->GetComponentLocation()) / RopeLength);
 	
+	if (CheckIfNearNextFlyLocation())
+	{
+		ReloadRope();
+		CurrentFlyLocation = FVector::ZeroVector;
+		CurrentFlyLocationDistance = 0;
+		GEngine->AddOnScreenDebugMessage(-1, 1, FColor::Green, TEXT("NEAR NEXT FLY LOC"));
+	}
 
 	HUDController->UpdatePointerImage(dynamic_cast<APlayerController*>(GetController()), LocationToGrab, SizeMultiplier );
 }
@@ -103,6 +110,26 @@ void AMyProject2Ball::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
 	GetWorld()->GetTimerManager().ClearAllTimersForObject(this);
+}
+
+FVector AMyProject2Ball::GetPositionFromRaycast(const FHitResult & HitResult) const
+{
+	FVector Result{ HitResult.ImpactPoint };
+	
+	FBox Box = HitResult.GetComponent()->Bounds.GetBox();
+	FVector BoxCenter = Box.GetCenter();
+	FVector BoxExtent = Box.GetExtent();
+
+	float MaxZPos = HitResult.ImpactPoint.Z;
+
+	for (auto PointMapping : AAllmightyMaster::BoundsPointMapping)
+	{
+		float PointZ = (BoxCenter + PointMapping * BoxExtent).Z;
+		MaxZPos = (PointZ > MaxZPos) ? PointZ : MaxZPos;
+	}
+
+	Result.Z = MaxZPos;
+	return Result;
 }
 
 void AMyProject2Ball::SetupPlayerInputComponent(class UInputComponent* InputComponent)
@@ -136,6 +163,7 @@ void AMyProject2Ball::SetupPlayerInputComponent(class UInputComponent* InputComp
 			{
 				if (LocationToGrab != AGrabableObject::NothingToGrab)
 				{
+					// HERE
 					Rope(Ball->GetComponentLocation(), LocationToGrab);
 				}
 				else
@@ -191,7 +219,7 @@ void AMyProject2Ball::PitchCamera(float Val)
 void AMyProject2Ball::CheckForPossession()
 {
 	AMyProject2Ball* BallInside = AAllmightyMaster::GetNextBall(this);
-	if (BallInside != nullptr)
+	if (BallInside)
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Green, TEXT("POSSESSING"));
 		AController* controller = GetController();
@@ -278,10 +306,11 @@ void AMyProject2Ball::CameraPointRaycast()
 	if (GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Camera, CQP))
 	{
 		AGrabableObject* Grabable = Cast<AGrabableObject>(HitResult.GetActor());
+		FVector Point = GetPositionFromRaycast (HitResult);
 
-		if (Grabable != nullptr)
+		/*if (Grabable)
 		{
-			if (ObjectToGrab != nullptr)
+			if (ObjectToGrab)
 			{
 				ObjectToGrab->ShowGrabable(false);
 			}
@@ -291,37 +320,41 @@ void AMyProject2Ball::CameraPointRaycast()
 		}
 		else
 		{			
-			if (ObjectToGrab != nullptr)
+			if (ObjectToGrab)
 			{
 				ObjectToGrab->ShowGrabable(false);
 				ObjectToGrab = nullptr;
 			}
 			LocationToGrab = AGrabableObject::NothingToGrab;
-		}
+		}*/
+		ObjectToGrab = (Grabable) ? Grabable : nullptr;
+
+		LocationToGrab = Point + RopeUpOffset * FVector::UpVector;
 	}
 	else
 	{
-		if (ObjectToGrab != nullptr)
+		LocationToGrab = AGrabableObject::NothingToGrab;
+		/*if (ObjectToGrab)
 		{
 			ObjectToGrab->ShowGrabable(false);
 			ObjectToGrab = nullptr;
 			LocationToGrab = AGrabableObject::NothingToGrab;
-		}
+		}*/
 		
 	}
 
 
-	if (LocationToGrab == AGrabableObject::NothingToGrab)
-	{
-		Direction = SpringArm->GetForwardVector();
-		Start = Ball->GetComponentLocation(); //this->GetActorLocation();
-		End = Start + RopeLength * Direction;
+	//if (LocationToGrab == AGrabableObject::NothingToGrab)
+	//{
+	//	Direction = SpringArm->GetForwardVector();
+	//	Start = Ball->GetComponentLocation(); //this->GetActorLocation();
+	//	End = Start + RopeLength * Direction;
 
-		if (GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Camera, CQP))
-		{
-			LocationToGrab = HitResult.Location;
-		}
-	}
+	//	if (GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Camera, CQP))
+	//	{
+	//		LocationToGrab = HitResult.Location;
+	//	}
+	//}
 }
 
 
@@ -370,6 +403,18 @@ void AMyProject2Ball::PrematureSlowTimeStop()
 	{
 		StopSlowTime();
 	}
+}
+
+bool AMyProject2Ball::CheckIfNearNextFlyLocation()
+{
+	bool Value = false;
+	if (CurrentFlyLocation != FVector::ZeroVector)
+	{
+		float Dist = FVector::Dist(Ball->GetComponentLocation(), CurrentFlyLocation);
+		Value = CurrentFlyLocationDistance < Dist;
+		CurrentFlyLocationDistance = Dist;
+	}
+	return Value;
 }
 
 void AMyProject2Ball::NotifyHit(class UPrimitiveComponent* MyComp, class AActor* Other, class UPrimitiveComponent* OtherComp, bool bSelfMoved, FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit)
@@ -428,6 +473,9 @@ void AMyProject2Ball::StopSlowTime()
 
 void AMyProject2Ball::Rope(const FVector & From, const FVector & To, bool LeaveTrace, UPrimitiveComponent* AffectedComponent)
 {
+	CurrentFlyLocation = To;
+	CurrentFlyLocationDistance = TNumericLimits<float>::Max();
+
 	FVector Direction = To - From;
 	Direction.Normalize();
 	
@@ -452,7 +500,7 @@ void AMyProject2Ball::Rope(const FVector & From, const FVector & To, bool LeaveT
 		DrawDebugLine(GetWorld(), From, To, FColor{ 255, 255 ,255 }, false, 1.0f, (uint8)'\000', 5.f);
 	}
 
-	if (AffectedComponent != nullptr && AffectedComponent->Mobility == EComponentMobility::Movable && AffectedComponent->IsSimulatingPhysics())
+	if (AffectedComponent && AffectedComponent->Mobility == EComponentMobility::Movable && AffectedComponent->IsSimulatingPhysics())
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Yellow, TEXT("COMPO MOVE"));
 		AffectedComponent->AddForce(-Direction * RopeStrength * Ball->GetMass() * RopeFreeObjectMovementMultplier, NAME_None, true);
@@ -487,7 +535,7 @@ void AMyProject2Ball::ReloadRope(AGrabableObject * Grabable)
 	if (Grabable == ObjectToGrab)
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Yellow, TEXT("2"));
-		if (Grabable != nullptr && Grabable->bCanSlowTime)
+		if (Grabable && Grabable->bCanSlowTime)
 		{
 			StartSlowTime();
 		}

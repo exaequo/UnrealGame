@@ -95,6 +95,12 @@ protected:
 	UPROPERTY(EditAnywhere, Category = Ball)
 		float MaxBallAngularVelocity;
 
+	UPROPERTY(EditAnywhere, Category = Rope)
+		float RopeUpOffset;
+
+	UPROPERTY(EditAnywhere, Category = Rope)
+		float RopeAbsoluteErrorValue;
+
 	/** Amount of force that will be applied to ball when roping */
 	UPROPERTY(EditAnywhere, Category = Rope)
 		float RopeStrength;
@@ -125,6 +131,9 @@ protected:
 
 	FVector LocationToGrab;
 
+	FVector CurrentFlyLocation;
+	float CurrentFlyLocationDistance;
+
 	/** Handler for Timer of the rope */
 	FTimerHandle RopeTimerHandle;
 
@@ -147,6 +156,8 @@ protected:
 
 	void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
+
+	FVector GetPositionFromRaycast(const FHitResult& HitResult) const;
 	///** Called for side to side input */
 	//void MoveRight(float Val);
 
@@ -206,6 +217,8 @@ protected:
 	void Move(const FVector& direction, const FVector& perpendicular, const float Val, const FVector& rawDirection, bool withTraversalHelp = false, float ReverseVal = 1.f);
 
 	void PrematureSlowTimeStop();
+
+	bool CheckIfNearNextFlyLocation();
 
 public:
 	/** Returns Ball subobject **/

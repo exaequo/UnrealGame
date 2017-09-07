@@ -20,6 +20,8 @@ public:
 	
 	static int32 PowerupCount;
 	
+	static const FVector BoundsPointMapping[8];
+
 	virtual void BeginPlay() override;
 
 	static void PowerupCollected(APowerup* Collected);
@@ -29,4 +31,5 @@ public:
 	static AMyProject2Ball* GetNextBall(AMyProject2Ball* Ball);
 
 	static void RestartLevel(APlayerController* Controller);
+
 };

@@ -8,6 +8,17 @@
 TArray<APowerup*> AAllmightyMaster::AllPowerups;
 TArray<AMyProject2Ball*> AAllmightyMaster::AllBalls;
 int32 AAllmightyMaster::PowerupCount = 0;
+const FVector AAllmightyMaster::BoundsPointMapping[8] = {
+	FVector(1, 1, 1),
+	FVector(1, 1, -1),
+	FVector(1, -1, 1),
+	FVector(1, -1, -1),
+	FVector(-1, 1, 1),
+	FVector(-1, 1, -1),
+	FVector(-1, -1, 1),
+	FVector(-1, -1, -1)
+};
+
 
 AAllmightyMaster::AAllmightyMaster()
 {
