@@ -21,6 +21,9 @@ public:
 	UPROPERTY(EditAnywhere)
 		UShapeComponent* TriggerComponent;
 
+	//UPROPERTY(EditAnywhere)
+	//	class UGrabableComponent* GrabableComponent;
+
 	UPROPERTY()
 		USceneComponent* SwitchRoot;
 

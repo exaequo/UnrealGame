@@ -15,12 +15,13 @@ public:
 	// Sets default values for this component's properties
 	UGrabableComponent();
 
-	UStaticMeshComponent* GrabableMesh;
+	UPROPERTY(EditAnywhere, Category = Grabable)
+		bool bCanGrab;
 
 	// Called when the game starts
-	virtual void BeginPlay() override;
+	//virtual void BeginPlay() override;
 	
-	void TurnOn(bool Value);
+	
 
 	// Called every frame
 	//virtual void TickComponent( float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction ) override;

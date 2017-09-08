@@ -3,6 +3,7 @@
 #include "MyProject2.h"
 #include "AllmightyMaster.h"
 #include "Public/HUDController.h"
+#include "Public/GrabableComponent.h"
 #include "MyProject2Ball.h"
 
 float AMyProject2Ball::TimeSlowTime{ 2.f };
@@ -305,56 +306,53 @@ void AMyProject2Ball::CameraPointRaycast()
 
 	if (GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Camera, CQP))
 	{
+		
 		AGrabableObject* Grabable = Cast<AGrabableObject>(HitResult.GetActor());
-		FVector Point = GetPositionFromRaycast (HitResult);
 
-		/*if (Grabable)
+		//TArray<USceneComponent*> GrabableComponents{};
+		//HitResult.GetComponent()->GetChildrenComponents(false, GrabableComponents);
+		
+		//TArray<UActorComponent*> GrabableComponent = HitResult.GetActor()->GetComponentsByClass(UGrabableComponent::StaticClass());
+		/*for (USceneComponent* Child : GrabableComponents)
 		{
-			if (ObjectToGrab)
+			UGrabableComponent* GrabableComponent = Cast<UGrabableComponent>(Child);
+			if (GrabableComponent)
 			{
-				ObjectToGrab->ShowGrabable(false);
+				CanGrab = GrabableComponent->bCanGrab;
+				break;
 			}
-			ObjectToGrab = Grabable;
-			ObjectToGrab->ShowGrabable(true);
-			LocationToGrab = ObjectToGrab->GetGrabablePosition();
-		}
-		else
-		{			
-			if (ObjectToGrab)
-			{
-				ObjectToGrab->ShowGrabable(false);
-				ObjectToGrab = nullptr;
-			}
-			LocationToGrab = AGrabableObject::NothingToGrab;
 		}*/
-		ObjectToGrab = (Grabable) ? Grabable : nullptr;
 
-		LocationToGrab = Point + RopeUpOffset * FVector::UpVector;
+		if (true)
+		{
+			FVector Point = GetPositionFromRaycast(HitResult);
+			FVector PointXY = Point - Ball->GetComponentLocation();
+			float PointZ = PointXY.Z;
+			PointXY.Z = 0;
+
+			if (PointXY.Size() > RopeXYBlindSpotDistance && PointXY.Size() > FMath::Abs(PointZ)) //in order to get rid of the jumping high up with rope
+			{
+				//GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, FString::Printf(TEXT("S: %f, Dist: %f"), PointXY.Size(), RopeXYBlindSpotDistance));
+
+				ObjectToGrab = (Grabable) ? Grabable : nullptr;
+
+				LocationToGrab = Point + RopeUpOffset * FVector::UpVector;
+			}
+			else
+			{
+				ObjectToGrab = nullptr;
+
+				LocationToGrab = AGrabableObject::NothingToGrab;
+			}
+
+		}
+		
 	}
 	else
 	{
 		LocationToGrab = AGrabableObject::NothingToGrab;
-		/*if (ObjectToGrab)
-		{
-			ObjectToGrab->ShowGrabable(false);
-			ObjectToGrab = nullptr;
-			LocationToGrab = AGrabableObject::NothingToGrab;
-		}*/
 		
 	}
-
-
-	//if (LocationToGrab == AGrabableObject::NothingToGrab)
-	//{
-	//	Direction = SpringArm->GetForwardVector();
-	//	Start = Ball->GetComponentLocation(); //this->GetActorLocation();
-	//	End = Start + RopeLength * Direction;
-
-	//	if (GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Camera, CQP))
-	//	{
-	//		LocationToGrab = HitResult.Location;
-	//	}
-	//}
 }
 
 
@@ -491,8 +489,8 @@ void AMyProject2Ball::Rope(const FVector & From, const FVector & To, bool LeaveT
 	GetWorld()->GetTimerManager().ClearTimer(RopeTimerHandle);
 	GetWorld()->GetTimerManager().SetTimer(RopeTimerHandle, TimerDelegate, RopeReloadTime, false);
 
-
 	Ball->SetPhysicsLinearVelocity(FVector::ZeroVector);
+	Ball->SetWorldLocation(Ball->GetComponentLocation() + FVector::UpVector*10);
 	Ball->AddImpulse(Direction * RopeStrength * Ball->GetMass(), NAME_None, true);
 	
 	if (LeaveTrace)

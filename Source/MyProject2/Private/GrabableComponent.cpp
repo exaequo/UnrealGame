@@ -7,24 +7,11 @@
 // Sets default values for this component's properties
 UGrabableComponent::UGrabableComponent()
 {
-	bWantsBeginPlay = true;
-	
-	GrabableMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("GrabableMesh"));
+	bCanGrab = true;
 	//GrabableMesh->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
 }
 
 
-// Called when the game starts
-void UGrabableComponent::BeginPlay()
-{
-	Super::BeginPlay();
-
-}
-
-void UGrabableComponent::TurnOn(bool Value)
-{
-
-}
 
 
 //// Called every frame

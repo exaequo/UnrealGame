@@ -101,6 +101,9 @@ protected:
 	UPROPERTY(EditAnywhere, Category = Rope)
 		float RopeAbsoluteErrorValue;
 
+	UPROPERTY(EditAnywhere, Category = Rope)
+		float RopeXYBlindSpotDistance;
+
 	/** Amount of force that will be applied to ball when roping */
 	UPROPERTY(EditAnywhere, Category = Rope)
 		float RopeStrength;

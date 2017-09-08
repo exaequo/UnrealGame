@@ -1,6 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "MyProject2.h"
+#include "Public/GrabableComponent.h"
 #include "MyProject2Ball.h"
 #include "Public/SwitchButton.h"
 
@@ -24,6 +25,8 @@ ASwitchButton::ASwitchButton()
 	TriggerComponent->OnComponentBeginOverlap.AddDynamic(this, &ASwitchButton::OnSwitchOverlap);
 	TriggerComponent->OnComponentEndOverlap.AddDynamic(this, &ASwitchButton::OnSwitchOverlapEnd);
 	
+	//GrabableComponent = CreateDefaultSubobject<UGrabableComponent>(TEXT("Grabable"));
+	//GrabableComponent->AttachToComponent(Door, FAttachmentTransformRules::KeepRelativeTransform);
 	
 	bTurnedOn = false;
 	PrimaryActorTick.bCanEverTick = true;
