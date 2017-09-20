@@ -66,6 +66,7 @@ AMyProject2Ball::AMyProject2Ball()
 	bCanRope = true;
 	MaxBallAngularVelocity = 10.f;
 	CameraRotationSensitivity = 10.f;
+	RopeZBlindSpotDistance = 100.f;
 	RopeFreeObjectMovementMultplier = 1.0f;
 	bCanJump = true; // Start being able to jump
 	bIsOnSwitch = false; //Start while not being in some switch
@@ -323,35 +324,41 @@ void AMyProject2Ball::CameraPointRaycast()
 			}
 		}*/
 
-		if (true)
+		FVector Point = GetPositionFromRaycast(HitResult);
+		FVector PointXY = Point - Ball->GetComponentLocation();
+		float PointZ = PointXY.Z;
+		PointXY.Z = 0;
+
+		if (PointXY.Size() > RopeXYBlindSpotDistance && PointXY.Size() > FMath::Abs(PointZ)) //in order to get rid of the jumping high up with rope
 		{
-			FVector Point = GetPositionFromRaycast(HitResult);
-			FVector PointXY = Point - Ball->GetComponentLocation();
-			float PointZ = PointXY.Z;
-			PointXY.Z = 0;
+			//GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, FString::Printf(TEXT("S: %f, Dist: %f"), PointXY.Size(), RopeXYBlindSpotDistance));
 
-			if (PointXY.Size() > RopeXYBlindSpotDistance && PointXY.Size() > FMath::Abs(PointZ)) //in order to get rid of the jumping high up with rope
-			{
-				//GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, FString::Printf(TEXT("S: %f, Dist: %f"), PointXY.Size(), RopeXYBlindSpotDistance));
+			ObjectToGrab = (Grabable) ? Grabable : nullptr;
 
-				ObjectToGrab = (Grabable) ? Grabable : nullptr;
-
-				LocationToGrab = Point + RopeUpOffset * FVector::UpVector;
-			}
-			else
-			{
-				ObjectToGrab = nullptr;
-
-				LocationToGrab = AGrabableObject::NothingToGrab;
-			}
-
+			LocationToGrab = Point + RopeUpOffset * FVector::UpVector;
 		}
+		else
+		{
+			ObjectToGrab = nullptr;
+
+			LocationToGrab = AGrabableObject::NothingToGrab;
+		}
+
+		
 		
 	}
 	else
 	{
 		LocationToGrab = AGrabableObject::NothingToGrab;
 		
+	}
+
+	if (LocationToGrab != AGrabableObject::NothingToGrab && 
+		LocationToGrab.Z > Ball->GetComponentLocation().Z + RopeZBlindSpotDistance)
+	{
+		ObjectToGrab = nullptr;
+
+		LocationToGrab = AGrabableObject::NothingToGrab;
 	}
 }
 
@@ -480,6 +487,7 @@ void AMyProject2Ball::Rope(const FVector & From, const FVector & To, bool LeaveT
 	FTimerDelegate TimerDelegate;
 	TimerDelegate.BindUFunction(this, FName("ReloadRope"), DefaultBallVelocity);
 	
+	//HERE
 	MaxBallVelocity = TNumericLimits<float>::Max();
 	bCanRope = false;
 	bCanJump = false;
@@ -516,6 +524,8 @@ void AMyProject2Ball::ReloadRope(float OldVelocityLimit)
 	bCanRope = true;
 	AdditionalGravity = DefaultAdditionalGravity;
 	Ball->SetEnableGravity(true);
+	
+	GetWorld()->GetTimerManager().ClearTimer(RopeTimerHandle);
 
 	if (OldVelocityLimit <= 0)
 	{
@@ -525,6 +535,12 @@ void AMyProject2Ball::ReloadRope(float OldVelocityLimit)
 	{
 		MaxBallVelocity = OldVelocityLimit;
 	}
+
+	//if (StopTheBallVelocity)
+	//{
+		//Ball->SetPhysicsAngularVelocity(FVector::ZeroVector);
+		Ball->SetPhysicsLinearVelocity(FVector::ZeroVector);
+	//}
 }
 
 void AMyProject2Ball::ReloadRope(AGrabableObject * Grabable)

@@ -101,8 +101,13 @@ protected:
 	UPROPERTY(EditAnywhere, Category = Rope)
 		float RopeAbsoluteErrorValue;
 
+	/** Values smaller than this will be blindspotted */
 	UPROPERTY(EditAnywhere, Category = Rope)
 		float RopeXYBlindSpotDistance;
+
+	/** Values above this will be blindspotted */
+	UPROPERTY(EditAnywhere, Category = Rope)
+		float RopeZBlindSpotDistance;
 
 	/** Amount of force that will be applied to ball when roping */
 	UPROPERTY(EditAnywhere, Category = Rope)
@@ -230,4 +235,6 @@ public:
 	FORCEINLINE class USpringArmComponent* GetSpringArm() const { return SpringArm; }
 	/** Returns Camera subobject **/
 	FORCEINLINE class UCameraComponent* GetCamera() const { return Camera; }
+
+	friend class ASlowTimeArea;
 };
