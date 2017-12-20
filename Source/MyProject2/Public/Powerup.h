@@ -23,6 +23,11 @@ public:
 	UPROPERTY(EditAnywhere)
 		UShapeComponent* TriggerComponent;
 
+	UPROPERTY(EditAnywhere)
+		bool countsAsCollectible;
+
+	UPROPERTY(EditAnywhere)
+		int powerGranting;
 
 	UFUNCTION()
 		void OnPowerupOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);

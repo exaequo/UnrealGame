@@ -18,6 +18,9 @@ APowerup::APowerup()
 	TriggerComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("TriggerBox"));
 	TriggerComponent->AttachToComponent(TriggerMesh, FAttachmentTransformRules::KeepRelativeTransform);
 	TriggerComponent->OnComponentBeginOverlap.AddDynamic(this, &APowerup::OnPowerupOverlap);
+
+	countsAsCollectible = true;
+	powerGranting = -1;
 }
 
 /**Checks if the overlap was conducted by player. If so, the powerup is destroyed. */
@@ -29,8 +32,11 @@ void APowerup::OnPowerupOverlap(UPrimitiveComponent * OverlappedComp, AActor * O
 
 	if (Shape != nullptr && Ball != nullptr)
 	{
-		AAllmightyMaster::PowerupCollected(this);
-		
+		if (countsAsCollectible)
+		{
+			AAllmightyMaster::PowerupCollected(this);
+		}
+		Ball->AddPowerup(powerGranting);
 		Destroy();
 	}
 }
@@ -39,5 +45,8 @@ void APowerup::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	AAllmightyMaster::AddPowerup(this);
+	if (countsAsCollectible)
+	{
+		AAllmightyMaster::AddPowerup(this);
+	}
 }

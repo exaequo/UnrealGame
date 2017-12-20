@@ -54,6 +54,9 @@ public:
 	/** Indicates whether we can currently jump */
 	bool bCanJump;
 
+	bool powerupJump;
+	bool powerupRope;
+
 	/** Return a pointer to the current HUD Controller*/
 	UFUNCTION(BlueprintPure, Category = "HUD")
 		UHUDController* GetHUDController();
@@ -66,6 +69,9 @@ public:
 	void ReloadRope(AGrabableObject* Grabable);
 
 	virtual void Tick(float DeltaSeconds) override;
+
+	void AddPowerup(int which);
+
 
 protected:
 	/** Pointer to the object that the ball will rope to if player presses the Rope button */

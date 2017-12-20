@@ -5,6 +5,8 @@
 #include "Public/HUDController.h"
 #include "Public/GrabableComponent.h"
 #include "MyProject2Ball.h"
+#include "Public/Checkpoint.h"
+#include "Public/SwitchButton.h"
 
 float AMyProject2Ball::TimeSlowTime{ 2.f };
 float AMyProject2Ball::TimeSlowSlowMultiplier{ 0.3f };
@@ -70,6 +72,9 @@ AMyProject2Ball::AMyProject2Ball()
 	RopeFreeObjectMovementMultplier = 1.0f;
 	bCanJump = true; // Start being able to jump
 	bIsOnSwitch = false; //Start while not being in some switch
+
+	powerupJump = false;
+	powerupRope = false;
 }
 
 void AMyProject2Ball::Tick(float DeltaSeconds)
@@ -90,7 +95,22 @@ void AMyProject2Ball::Tick(float DeltaSeconds)
 		GEngine->AddOnScreenDebugMessage(-1, 1, FColor::Green, TEXT("NEAR NEXT FLY LOC"));
 	}
 
-	HUDController->UpdatePointerImage(dynamic_cast<APlayerController*>(GetController()), LocationToGrab, SizeMultiplier );
+	if (powerupRope) { HUDController->UpdatePointerImage(dynamic_cast<APlayerController*>(GetController()), LocationToGrab, SizeMultiplier); }
+}
+
+void AMyProject2Ball::AddPowerup(int which)
+{
+	switch (which)
+	{
+	case 0:
+		GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::White, TEXT("UNLOCKED JUMP (Space)"));
+		powerupJump = true;
+		break;
+	case 1:
+		GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::White, TEXT("UNLOCKED ROPE (RMB)"));
+		powerupRope = true;
+		break;
+	}
 }
 
 void AMyProject2Ball::BeginPlay()
@@ -149,7 +169,7 @@ void AMyProject2Ball::SetupPlayerInputComponent(class UInputComponent* InputComp
 	ActionBinding.ActionName = "Jump";
 	ActionBinding.ActionDelegate.GetDelegateForManualSet().BindLambda(
 		[this]() {
-			if (bCanJump){
+			if (bCanJump && powerupJump){
 				const FVector Impulse = FVector(0.f, 0.f, JumpImpulse);
 				Ball->AddImpulse(Impulse, NAME_None, true);
 				bCanJump = false;
@@ -161,7 +181,7 @@ void AMyProject2Ball::SetupPlayerInputComponent(class UInputComponent* InputComp
 	ActionBinding.ActionName = "Rope";
 	ActionBinding.ActionDelegate.GetDelegateForManualSet().BindLambda(
 		[this]() {
-			if (bCanRope)
+			if (bCanRope && powerupRope)
 			{
 				if (LocationToGrab != AGrabableObject::NothingToGrab)
 				{
@@ -175,6 +195,24 @@ void AMyProject2Ball::SetupPlayerInputComponent(class UInputComponent* InputComp
 
 				PrematureSlowTimeStop();
 			}
+	});
+	InputComponent->AddActionBinding(ActionBinding);
+
+	// set up checkpoint key
+	ActionBinding.ActionName = "Checkpoint";
+	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::White, TEXT("C!"));
+	ActionBinding.ActionDelegate.GetDelegateForManualSet().BindLambda(
+		[this]() {
+		//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::White, TEXT("Checkpoint input added!"));
+		ASwitchButton::TeleportPlayerToLastCheckpoint(this);
+	});
+	InputComponent->AddActionBinding(ActionBinding);
+
+	ActionBinding.ActionName = "Powerup";
+	ActionBinding.ActionDelegate.GetDelegateForManualSet().BindLambda(
+		[this]() {
+		powerupJump = true;
+		powerupRope = true;
 	});
 	InputComponent->AddActionBinding(ActionBinding);
 
@@ -546,13 +584,14 @@ void AMyProject2Ball::ReloadRope(float OldVelocityLimit)
 void AMyProject2Ball::ReloadRope(AGrabableObject * Grabable)
 {	
 	ReloadRope();
+	if (Grabable && Grabable->bCanSlowTime)
+	{
+		StartSlowTime();
+	}
 	if (Grabable == ObjectToGrab)
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Yellow, TEXT("2"));
-		if (Grabable && Grabable->bCanSlowTime)
-		{
-			StartSlowTime();
-		}
+		
 		ObjectToGrab->ShowGrabable(false);
 		ObjectToGrab = nullptr;
 

@@ -34,12 +34,22 @@ public:
 	UPROPERTY(EditAnywhere)
 		bool bReverseSwitch;
 
+	UPROPERTY(EditAnywhere)
+		int checkpointNumber;
+
+	UPROPERTY(EditAnywhere)
+		bool bIsEnd;
 
 	UFUNCTION()
 		void OnSwitchOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 	UFUNCTION()
 		void OnSwitchOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+
+
+	static int highestCheckpointNumber;
+	static ASwitchButton* currentCheckpoint;
 
 	// Sets default values for this actor's properties
 	ASwitchButton();
@@ -52,6 +62,6 @@ public:
 	// Called every frame
 	virtual void Tick( float DeltaSeconds ) override;
 
-	
+	static void TeleportPlayerToLastCheckpoint(class AMyProject2Ball* Ball);
 	
 };
